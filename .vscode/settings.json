@@ -1,0 +1,53 @@
+{
+  "files.exclude": {
+    ".git": true,
+    "dist": false,
+    "node_modules": true,
+    "src/generated": true,
+    "prisma/schema.prisma": true,
+    "prisma/seed*.js": true
+  },
+  "files.watcherExclude": {
+    ".git/objects/**": true,
+    ".git/subtree-cache/**": true,
+    "node_modules/**": true
+  },
+  "search.exclude": {
+    "pnpm-lock.yaml": true,
+    "traefik/staging/ssl": true
+  },
+  "files.associations": {
+    "*.zmodel": "zmodel",
+    ".env*": "properties",
+    "**/.husky/*": "shellscript"
+  },
+  "biome.enabled": true,
+  "prettier.enable": false,
+  "editor.formatOnSave": true,
+  "eslint.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "never"
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "[zmodel]": {
+    "editor.defaultFormatter": "zenstack.zenstack"
+  },
+  "[shellscript]": {
+    "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "cSpell.words": [
+    "foodlify",
+    "zenstack",
+    "zenstackhq",
+    "traefik",
+    "zmodel",
+    "sonarjs"
+  ]
+}

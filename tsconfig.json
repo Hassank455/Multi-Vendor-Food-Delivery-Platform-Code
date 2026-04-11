@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "es2022",
+    "moduleResolution": "Bundler",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "removeComments": true,
+    "newLine": "lf",
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "lib": ["ESNext"],
+    "sourceMap": false,
+    "noUnusedLocals": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@module/*": ["./src/modules/*"]
+    },
+    "allowJs": true,
+    "incremental": false,
+    "noEmit": true,
+
+    // jsx
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "eslint.config.mjs", "prisma.config.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,38 @@
+services:
+  db-dev:
+    image: postgres:18.0-alpine3.22
+    container_name: db-dev
+    ports:
+      - $POSTGRES_PORT:$POSTGRES_PORT
+    volumes:
+      - db-dev-data:/var/lib/postgresql
+    environment:
+      - PGDATA=/var/lib/postgresql/18/docker
+    env_file:
+      - envs/.env.development
+    restart: always
+
+  redis-cache-dev:
+    image: redis:8.0-alpine3.21
+    container_name: redis-cache-dev
+    ports:
+      - $REDIS_CACHE_PORT:$REDIS_CACHE_PORT
+    volumes:
+      - redis-cache-dev:/data
+    env_file:
+      - envs/.env.development
+    command: >
+      sh -c "
+      redis-server
+      --port $${REDIS_CACHE_PORT}
+      --maxmemory 192mb
+      --maxmemory-policy noeviction
+      --notify-keyspace-events Ex
+      --save 60 1
+      --loglevel warning
+      "
+    restart: always
+
+volumes:
+  db-dev-data:
+  redis-cache-dev:

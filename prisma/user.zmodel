@@ -1,0 +1,39 @@
+abstract model Base {
+  id String @id @default(uuid(7)) @db.Uuid
+}
+
+enum UserRole {
+  ADMIN
+  PLAYER
+}
+
+model Role extends Base {
+  name        UserRole     @unique
+  permissions Permission[]
+
+  user        User[]
+
+  @@allow('read', true)
+}
+
+model Permission extends Base {
+  name  String @unique
+  roles Role[]
+
+  @@allow('read', true)
+}
+
+model User extends Base {
+  role     Role    @relation(fields: [roleId], references: [id], onDelete: NoAction)
+  roleId   String  @db.Uuid //  ADMIN  PLAYER
+
+  name     String  @db.VarChar(255)
+  email    String? @unique @email @db.VarChar(255)
+
+  password String? @db.Char(128) // @omit
+  salt     String? @db.Char(32)
+
+  @@allow('read', auth() != null || auth().role.permissions?[name == 'manage:user'])
+  @@allow('create', true)
+  @@allow('update', auth() == this)
+}

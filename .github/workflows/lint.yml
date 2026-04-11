@@ -1,0 +1,38 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [dev]
+
+# cancel previous runs if a new commit is pushed to the same PR
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile --prefer-offline --ignore-scripts
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Check linting
+        run: pnpm lint:check --max-warnings=0
+
+      - name: Check typing
+        run: pnpm type:check

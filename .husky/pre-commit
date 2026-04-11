@@ -1,0 +1,1 @@
+pnpm cross-env NODE_OPTIONS='--experimental-strip-types' pnpm lint-staged --concurrent false

@@ -1,0 +1,10 @@
+allowBuilds:
+  '@prisma/engines': true
+  '@swc/core': true
+  bcrypt: false
+  core-js: false
+  esbuild: false
+  prisma: true
+  redis-commander: false
+  unrs-resolver: false
+  zenstack: true

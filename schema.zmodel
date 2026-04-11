@@ -1,0 +1,17 @@
+import 'prisma/user'
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+
+plugin prisma {
+  provider = '@core/prisma'
+  generateClient = false
+}

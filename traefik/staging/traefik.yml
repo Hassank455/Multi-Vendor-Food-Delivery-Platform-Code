@@ -1,0 +1,38 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  http:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+  https:
+    address: :443
+
+tls:
+  certificates:
+    - certFile: /ssl-certs/selfsigned.crt
+      keyFile: /ssl-certs/selfsigned.key
+
+providers:
+  docker:
+    exposedByDefault: false
+    watch: true
+    network: proxy
+  file:
+    filename: /config.yml
+    watch: true
+
+
+accesslog: {}
+
+log:
+  level: INFO

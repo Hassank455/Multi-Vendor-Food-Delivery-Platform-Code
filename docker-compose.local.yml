@@ -1,0 +1,109 @@
+services:
+  api-local-foodlify:
+    image: api-local
+    container_name: api-local-foodlify
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        - ARG_NODE_MEMORY=180
+        - ARG_API_PORT=${API_PORT:-3000}
+    env_file:
+      - envs/.env.local
+    environment:
+      - POSTGRES_HOST=db-local-foodlify
+    networks:
+      - api-internal-local-foodlify
+      - proxy
+    depends_on:
+      - db-local-foodlify
+      - redis-cache-local-foodlify
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`api.example.com`)
+      - traefik.http.routers.api.tls=true
+      - traefik.http.routers.api.entrypoints=https
+      - traefik.http.services.api.loadbalancer.server.port=${API_PORT:-3000}
+      - traefik.http.services.api.loadbalancer.healthCheck.path=/api/health
+      - traefik.http.services.api.loadbalancer.healthCheck.interval=15s
+      - traefik.http.services.api.loadbalancer.healthCheck.timeout=1s
+      - traefik.http.middlewares.test-retry.retry.attempts=5
+      - traefik.http.middlewares.test-retry.retry.initialinterval=500ms
+      - traefik.http.middlewares.limit-payload.buffering.maxRequestBodyBytes=5120
+      - traefik.http.routers.api.middlewares=limit-payload@docker
+    # restart: unless-stopped
+
+  db-local-foodlify:
+    image: postgres:18.0-alpine3.22
+    container_name: db-local-foodlify
+    ports:
+      - $POSTGRES_PORT:$POSTGRES_PORT
+    volumes:
+      - db-local-foodlify-data:/var/lib/postgresql
+    environment:
+      - PGDATA=/var/lib/postgresql/18/docker
+      - PGPORT=${POSTGRES_PORT:-5432}
+    env_file:
+      - envs/.env.local
+    networks:
+      - api-internal-local-foodlify
+    restart: unless-stopped
+
+  redis-cache-local-foodlify:
+    image: redis:8.0-alpine3.21
+    container_name: redis-cache-local-foodlify
+    ports:
+      - $REDIS_CACHE_PORT:$REDIS_CACHE_PORT
+    volumes:
+      - redis-cache-local-foodlify:/data
+    env_file:
+      - envs/.env.local
+    networks:
+      - api-internal-local-foodlify
+    command: >
+      sh -c "
+      redis-server
+      --loglevel warning
+      --requirepass $${REDIS_CACHE_PASSWORD}
+      --port $${REDIS_CACHE_PORT}
+      "
+    restart: unless-stopped
+
+  traefik-local-foodlify:
+    image: traefik:v3.4
+    container_name: traefik-local-foodlify
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./traefik/staging/ssl:/ssl-certs
+      - ./traefik/staging/traefik.yml:/traefik.yml:ro
+      - ./traefik/staging/config.yml:/config.yml:ro
+      - ./traefik/staging/cert:/cert:ro
+      - ./secrets/local/traefik/auth.txt:/auth.txt:ro
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges=true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`server.example.com`)
+      - traefik.http.routers.dashboard.entrypoints=https
+      - traefik.http.routers.dashboard.tls=true
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.usersFile=/auth.txt
+    restart: unless-stopped
+
+volumes:
+  db-local-foodlify-data:
+  redis-cache-local-foodlify:
+
+networks:
+  api-internal-local-foodlify:
+    external: false
+  proxy:
+    name: proxy
+    external: true

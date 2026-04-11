@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "redis.redis-for-vscode",
+    "prisma.language-tools",
+    "zenstack.zenstack",
+    "biomejs.biome",
+    "dbaeumer.vscode-eslint",
+    "yoavbls.pretty-ts-errors",
+    "aaron-bond.better-comments",
+    "christian-kohler.path-intellisense",
+    "streetsidesoftware.code-spell-checker",
+    "cardinal90.multi-cursor-case-preserve",
+    "mads-hartmann.bash-ide-vscode"
+  ]
+}
