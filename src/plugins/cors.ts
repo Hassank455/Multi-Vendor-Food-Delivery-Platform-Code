@@ -8,7 +8,7 @@ import { AppError } from '@/lib/app-error'
 export default fp<FastifyCorsOptions>(
   async (fastify) => {
     fastify.register(fastifyCors, {
-      methods: ['GET', 'POST', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'BATCH', 'OPTIONS'],
       credentials: true,
       maxAge: 86_400,
       origin: (origin, cb) => {

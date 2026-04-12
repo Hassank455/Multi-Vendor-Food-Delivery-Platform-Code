@@ -1,1 +1,1 @@
-// export route and utils needed in other modules
+export { cartRoute } from './cart.controller'

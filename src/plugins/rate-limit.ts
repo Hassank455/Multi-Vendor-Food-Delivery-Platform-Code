@@ -48,45 +48,17 @@ export default fp(
     }
 
     const PROFILES = {
-      STRICT: { max: 3, timeWindow: 600_000 }, // 3 per 10 mins
       AUTH: { max: 5, timeWindow: 60_000 }, // 5 per 1 min
       SPAM: { max: 2, timeWindow: 3_600_000 }, // 2 per hour
-      OTP: { max: 5, timeWindow: 300_000 }, // 5 per 5 mins
     }
 
     const limiters = {
-      adminLogin: fastify.createRateLimit({
-        ...PROFILES.STRICT,
-        keyGenerator: keyGenerator('login'),
-      }),
-
       login: fastify.createRateLimit({
         ...PROFILES.AUTH,
         keyGenerator: keyGenerator('login'),
       }),
 
       register: fastify.createRateLimit({ ...PROFILES.SPAM }),
-
-      resendOtp: fastify.createRateLimit({
-        max: 1,
-        timeWindow: 60_000,
-        keyGenerator: keyGenerator('otp'),
-      }),
-
-      verifyOtp: fastify.createRateLimit({
-        ...PROFILES.OTP,
-        keyGenerator: keyGenerator('otp'),
-      }),
-
-      requestResetToken: fastify.createRateLimit({
-        ...PROFILES.SPAM,
-        keyGenerator: keyGenerator('reset'),
-      }),
-
-      confirmResetToken: fastify.createRateLimit({
-        ...PROFILES.STRICT,
-        keyGenerator: keyGenerator('reset'),
-      }),
     }
 
     const rateLimiter = async (
@@ -109,14 +81,7 @@ export default fp(
   { name: 'rate-limit', dependencies: ['redis'] },
 )
 
-type RateLimiterType =
-  | 'adminLogin'
-  | 'login'
-  | 'register'
-  | 'resendOtp'
-  | 'verifyOtp'
-  | 'requestResetToken'
-  | 'confirmResetToken'
+type RateLimiterType = 'login' | 'register'
 
 declare module 'fastify' {
   interface FastifyInstance {

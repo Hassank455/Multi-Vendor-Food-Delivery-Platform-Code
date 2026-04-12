@@ -10,6 +10,7 @@
     "christian-kohler.path-intellisense",
     "streetsidesoftware.code-spell-checker",
     "cardinal90.multi-cursor-case-preserve",
-    "mads-hartmann.bash-ide-vscode"
+    "mads-hartmann.bash-ide-vscode",
+    "humao.rest-client"
   ]
 }

@@ -4,7 +4,7 @@ abstract model Base {
 
 enum UserRole {
   ADMIN
-  PLAYER
+  USER
 }
 
 model Role extends Base {
@@ -25,7 +25,7 @@ model Permission extends Base {
 
 model User extends Base {
   role     Role    @relation(fields: [roleId], references: [id], onDelete: NoAction)
-  roleId   String  @db.Uuid //  ADMIN  PLAYER
+  roleId   String  @db.Uuid //  ADMIN  USER
 
   name     String  @db.VarChar(255)
   email    String? @unique @email @db.VarChar(255)

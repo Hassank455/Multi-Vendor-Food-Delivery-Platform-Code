@@ -19,14 +19,11 @@ const schema = z.object({
     .number()
     .int()
     .nonnegative()
-    .default(10_000),
+    .default(30_000),
   SERVER_URL: z.string().min(1),
   LOG_PRISMA_QUERY: flagSchema,
 
-  // postgres
   DATABASE_URL: z.string().min(1),
-
-  // redis
   REDIS_CACHE_URL: z.string().min(1),
 })
 

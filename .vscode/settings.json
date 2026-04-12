@@ -1,7 +1,7 @@
 {
   "files.exclude": {
     ".git": true,
-    "dist": false,
+    "dist": true,
     "node_modules": true,
     "src/generated": true,
     "prisma/schema.prisma": true,
@@ -21,15 +21,18 @@
     ".env*": "properties",
     "**/.husky/*": "shellscript"
   },
+
   "biome.enabled": true,
   "prettier.enable": false,
   "editor.formatOnSave": true,
   "eslint.enable": true,
+
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "never"
   },
+
   "editor.defaultFormatter": "biomejs.biome",
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
@@ -40,8 +43,17 @@
   "[shellscript]": {
     "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode"
   },
+
   "js/ts.tsdk.path": "node_modules/typescript/lib",
   "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+
+  "rest-client.fontSize": 12,
+  "rest-client.previewOption": "body",
+  "rest-client.previewResponseInUntitledDocument": false,
+  "rest-client.defaultHeaders": {
+    "Content-Type": "application/json"
+  },
+
   "cSpell.words": [
     "foodlify",
     "zenstack",

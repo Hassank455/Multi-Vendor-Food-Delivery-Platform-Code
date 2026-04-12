@@ -15,7 +15,6 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     corepack enable && \
     pnpm i --frozen-lockfile --prefer-offline --ignore-scripts --prod
 
-
 FROM base AS builder
 
 ENV PNPM_HOME="/pnpm"
@@ -67,5 +66,4 @@ CMD ["node", "dist/index.js"]
 # "--optimize-for-size", "--no-allow-child-process",
 
 # --no-allow-fs-write \
-# 
 # "--allow-proto=delete"
