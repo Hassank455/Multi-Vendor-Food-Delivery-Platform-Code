@@ -19,6 +19,7 @@ async function startServer() {
           dbTime: result[0].now,
         });
       } catch (err: any) {
+        console.error("❌ DB query failed", err);
         res.status(500).json({ error: err.message });
       }
     });
