@@ -8,11 +8,230 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
-  phone String
-  password String
-  createdAt DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  phone     String
+  password  String
+  createdAt DateTime  @default(now())
   deletedAt DateTime?
+
+  role Role @default(CUSTOMER)
+
+  cart       Cart?
+  orders     Order[]
+  reviews    Review[]
+  addresses  Address[]
+  // Can the user have multiple restaurants?
+  restaurant Restaurant[] // Only for restaurant owners
+}
+
+model Address {
+  id          Int     @id @default(autoincrement())
+  userId      Int
+  street      String
+  city        String
+  buildingNo  String?
+  postalCode  String? // Not important!
+  governorate String
+
+  user User @relation(fields: [userId], references: [id])
+
+  orders Order[]
+}
+
+model Restaurant {
+  id      Int     @id @default(autoincrement())
+  name    String
+  phone   String?
+  address String?
+  ownerId Int
+  rating  Float   @default(0)
+
+  owner User @relation(fields: [ownerId], references: [id])
+
+  menuItems      MenuItem[]
+  menuCategories MenuCategory[]
+  reviews        Review[]
+  discountCodes  DiscountCode[]
+  orders         Order[]
+}
+
+model MenuItem {
+  id           Int     @id @default(autoincrement())
+  name         String
+  description  String
+  restaurantId Int
+  categoryId   Int
+  price        Float
+  isAvailable  Boolean @default(true)
+
+  restaurant Restaurant   @relation(fields: [restaurantId], references: [id])
+  category   MenuCategory @relation(fields: [categoryId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+model MenuCategory {
+  id           Int     @id @default(autoincrement())
+  name         String
+  restaurantId Int
+  isActive     Boolean @default(true)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  menuItems MenuItem[]
+}
+
+model Review {
+  id           Int     @id @default(autoincrement())
+  userId       Int
+  restaurantId Int
+  orderId      Int     @unique
+  rating       Float
+  comment      String?
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
+
+  @@index([userId, restaurantId])
+}
+
+model Cart {
+  id       Int   @id @default(autoincrement())
+  userId   Int   @unique
+  subTotal Float @default(0)
+  user     User  @relation(fields: [userId], references: [id])
+
+  items      CartItem[]
+  cartEvents CartEvent[]
+
+  @@index([userId])
+}
+
+model CartEvent {
+  id        Int           @id @default(autoincrement())
+  cartId    Int
+  type      CartEventType
+  timestamp DateTime      @default(now())
+
+  cart Cart @relation(fields: [cartId], references: [id])
+}
+
+model CartItem {
+  id         Int   @id @default(autoincrement())
+  cartId     Int
+  menuItemId Int
+  quantity   Int   @default(1)
+  price      Float
+
+  cart     Cart     @relation(fields: [cartId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([cartId, menuItemId])
+}
+
+model Order {
+  id                 Int           @id @default(autoincrement())
+  userId             Int
+  addressId          Int
+  restaurantId       Int
+  status             OrderStatus   @default(PENDING)
+  createdAt          DateTime      @default(now())
+  paymentMethod      PaymentMethod
+  totalPrice         Float
+  discountPercentage Float?
+  priceAfterDiscount Float? // Not really needed, can be calculated on the fly
+
+  user       User       @relation(fields: [userId], references: [id])
+  address    Address    @relation(fields: [addressId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  review       Review?
+  items        OrderItem[]
+  transactions Transaction[]
+}
+
+model OrderItem {
+  id         Int   @id @default(autoincrement())
+  orderId    Int
+  menuItemId Int
+  quantity   Int
+  price      Float @map("snapshotPrice")
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([orderId, menuItemId])
+}
+
+model DiscountCode {
+  id                 Int      @id @default(autoincrement())
+  code               String   @unique
+  restaurantId       Int
+  discountPercentage Float
+  //TODO: Should we use limitAwarded or expiresAt? Maybe both?
+  // limitAwarded       Int
+  // awardedCount       Int      @default(0)
+  expiresAt          DateTime
+  isActive           Boolean  @default(true) // Not really needed, can be determined by expiresAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+}
+
+enum Role {
+  CUSTOMER
+  RESTAURANT_OWNER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum CartEventType {
+  ITEM_ADDED
+  ITEM_REMOVED
+  CART_CLEARED
+  CART_CHECKED_OUT
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+// Transaction?
+model Transaction {
+  id        Int               @id @default(autoincrement())
+  orderId   Int
+  amount    Float
+  method    PaymentMethod
+  details   String?
+  status    TransactionStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  order           Order            @relation(fields: [orderId], references: [id])
+  transactionLogs TransactionLog[]
+}
+
+model TransactionLog {
+  id            Int               @id @default(autoincrement())
+  transactionId Int
+  status        TransactionStatus
+  timestamp     DateTime          @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
 }
