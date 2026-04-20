@@ -16,3 +16,46 @@ model User {
   createdAt DateTime @default(now())
   deletedAt DateTime?
 }
+
+model EventStore {
+  id            String   @id @db.Uuid
+  aggregateId   String   @map("aggregate_id")
+  aggregateType String   @map("aggregate_type")
+  eventType     String   @map("event_type")
+  eventData     Json     @map("event_data")
+  eventMetadata Json?    @map("event_metadata")
+  version       Int
+  occurredAt    DateTime @map("occurred_at")
+
+  @@unique([aggregateId, version], map: "event_store_aggregate_version_key")
+  @@index([aggregateId, occurredAt])
+  @@map("event_store")
+}
+
+model CartReadModel {
+  cartId        String              @id @map("cart_id")
+  userId        String              @map("user_id")
+  currency      String
+  status        String
+  totalQuantity Int                 @map("total_quantity")
+  totalPrice    Decimal             @db.Decimal(10, 2) @map("total_price")
+  version       Int
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+  items         CartItemReadModel[]
+
+  @@map("cart_read_model")
+}
+
+model CartItemReadModel {
+  id          String        @id @db.Uuid
+  cartId      String        @map("cart_id")
+  productId   String        @map("product_id")
+  productName String        @map("product_name")
+  unitPrice   Decimal       @db.Decimal(10, 2) @map("unit_price")
+  quantity    Int
+  lineTotal   Decimal       @db.Decimal(10, 2) @map("line_total")
+  cart        CartReadModel @relation(fields: [cartId], references: [cartId], onDelete: Cascade)
+
+  @@index([cartId])
+  @@map("cart_item_read_model")
+}
