@@ -34,3 +34,22 @@ export interface CartResponseDto {
 }
 
 export type CartEventResponseDto = CartEvent;
+
+export interface ChangeQuantityDto {
+  cartId: string;
+  productId: string;
+  amount: number;
+}
+
+export interface RemoveItemDto {
+  cartId: string;
+  productId: string;
+}
+
+export interface ResetCartDto {
+  cartId: string;
+}
+
+export interface CheckoutCartDto {
+  cartId: string;
+}

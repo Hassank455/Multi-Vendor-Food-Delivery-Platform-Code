@@ -1,7 +1,11 @@
 import { Router } from "express";
 import prisma from "../../lib/prisma";
 import { CartController } from "./cart.controller";
-import { validateAddItem, validateCreateCart } from "./cart.validation";
+import {
+  validateAddItem,
+  validateCreateCart,
+  validateAmount,
+} from "./cart.validation";
 import { PrismaCartEventStoreRepository } from "./repository/prisma-cart-event-store.repository";
 import { PrismaCartReadRepository } from "./repository/prisma-cart-read.repository";
 
@@ -23,6 +27,23 @@ const controller = new CartController(cartService);
 router.post("/carts", validateCreateCart, controller.createCart);
 router.get("/carts/:cartId", controller.getCart);
 router.get("/carts/:cartId/events", controller.getCartEvents);
+
 router.post("/carts/:cartId/items", validateAddItem, controller.addItem);
+
+router.patch(
+  "/carts/:cartId/items/:productId/increase",
+  validateAmount,
+  controller.increaseQuantity,
+);
+router.patch(
+  "/carts/:cartId/items/:productId/decrease",
+  validateAmount,
+  controller.decreaseQuantity,
+);
+
+router.delete("/carts/:cartId/items/:productId", controller.removeItem);
+
+router.post("/carts/:cartId/reset", controller.resetCart);
+router.post("/carts/:cartId/checkout", controller.checkout);
 
 export default router;

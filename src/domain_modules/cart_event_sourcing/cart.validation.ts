@@ -32,3 +32,16 @@ export function validateAddItem(
 
   next();
 }
+export function validateAmount(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const { amount } = req.body;
+
+  if (typeof amount !== "number") {
+    return res.status(400).json({ message: "amount must be a number" });
+  }
+
+  next();
+}

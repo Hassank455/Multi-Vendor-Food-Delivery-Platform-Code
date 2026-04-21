@@ -3,7 +3,10 @@ import type {
   AddItemDto,
   CartEventResponseDto,
   CartResponseDto,
-  CartItemResponseDto,
+  ChangeQuantityDto,
+  RemoveItemDto,
+  ResetCartDto,
+  CheckoutCartDto,
 } from "../cart.dto";
 import type { CartEventStoreRepository } from "../repository/cart.event-store.repository";
 import type { CartReadRepository } from "../repository/cart.read.repository";
@@ -63,5 +66,35 @@ export class CartService {
     }
 
     cart.clearUncommittedEvents();
+  }
+
+  async increaseQuantity(command: ChangeQuantityDto): Promise<void> {
+    const cart = await this.loadCart(command.cartId);
+    cart.increaseQuantity(command.productId, command.amount);
+    await this.persist(cart);
+  }
+
+  async decreaseQuantity(command: ChangeQuantityDto): Promise<void> {
+    const cart = await this.loadCart(command.cartId);
+    cart.decreaseQuantity(command.productId, command.amount);
+    await this.persist(cart);
+  }
+
+  async removeItem(command: RemoveItemDto): Promise<void> {
+    const cart = await this.loadCart(command.cartId);
+    cart.removeItem(command.productId);
+    await this.persist(cart);
+  }
+
+  async resetCart(command: ResetCartDto): Promise<void> {
+    const cart = await this.loadCart(command.cartId);
+    cart.resetCart();
+    await this.persist(cart);
+  }
+
+  async checkout(command: CheckoutCartDto): Promise<void> {
+    const cart = await this.loadCart(command.cartId);
+    cart.checkout();
+    await this.persist(cart);
   }
 }
