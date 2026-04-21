@@ -1,4 +1,10 @@
-import type { CreateCartDto } from "../cart.dto";
+import type {
+  CreateCartDto,
+  AddItemDto,
+  CartEventResponseDto,
+  CartResponseDto,
+  CartItemResponseDto,
+} from "../cart.dto";
 import type { CartEventStoreRepository } from "../repository/cart.event-store.repository";
 import type { CartReadRepository } from "../repository/cart.read.repository";
 import { CartProjection } from "./cart.projection";
@@ -15,6 +21,25 @@ export class CartService {
     const cart = await this.loadCart(command.cartId);
     cart.create(command.userId, command.currency);
     await this.persist(cart);
+  }
+
+  async addItem(command: AddItemDto): Promise<void> {
+    const cart = await this.loadCart(command.cartId);
+    cart.addItem(
+      command.productId,
+      command.productName,
+      command.unitPrice,
+      command.quantity,
+    );
+    await this.persist(cart);
+  }
+
+  async getCart(cartId: string): Promise<CartResponseDto | null> {
+    return this.cartReadRepository.findById(cartId);
+  }
+
+  async getCartEvents(cartId: string): Promise<CartEventResponseDto[]> {
+    return this.eventStoreRepository.getEventsByCartId(cartId);
   }
 
   // read cart history from event store and rehydrate aggregate

@@ -14,3 +14,21 @@ export function validateCreateCart(
 
   next();
 }
+
+export function validateAddItem(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const { productId, productName, unitPrice, quantity } = req.body;
+
+  if (!productId || !productName) {
+    return sendError(res, "productId and productName are required", 400);
+  }
+
+  if (typeof unitPrice !== "number" || typeof quantity !== "number") {
+    return sendError(res, "unitPrice and quantity must be numbers", 400);
+  }
+
+  next();
+}
