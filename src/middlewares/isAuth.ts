@@ -16,10 +16,15 @@ const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
     );
   }
 
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error("JWT_SECRET is not configured");
+  }
+
   try {
     const payload: JwtPayloadType = jwt.verify(
       token,
-      `${process.env.JWT_SECRET}`,
+      jwtSecret,
     ) as JwtPayloadType;
 
     if (!payload.ownerId && !payload.userId) {
