@@ -1,5 +1,5 @@
 import { Router } from "express";
-import cartRoutes from "../domain_modules/cart/cart.route";
+import cartRoutes from "../modules/cart/cart.route";
 
 const router = Router();
 
