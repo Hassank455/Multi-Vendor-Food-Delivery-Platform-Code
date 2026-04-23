@@ -1,4 +1,4 @@
 import isAuth from "./isAuth";
-import errorHandler from "./errorHandler";
+import { errorHandler } from "./errorHandler";
 
 export { isAuth, errorHandler };
