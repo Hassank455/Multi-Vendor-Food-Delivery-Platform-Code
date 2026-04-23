@@ -1,8 +1,14 @@
-import jwt, { JwtPayload as JwtPayloadType } from "jsonwebtoken";
+import jwt, {
+  JsonWebTokenError,
+  JwtPayload as JwtPayloadType,
+  NotBeforeError,
+  TokenExpiredError,
+} from "jsonwebtoken";
 import { BadRequestError, UnAuthenticatedError } from "../errors";
 import { Response, NextFunction } from "express";
 
 import { CustomRequest } from "../common/tdos";
+import { AppErrorImpl } from "../errors/customApiError";
 
 const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
   const authorization = req.get("authorization");
@@ -41,7 +47,19 @@ const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
     }
     next();
   } catch (error) {
-    throw new UnAuthenticatedError("The session is expired!");
+    if (error instanceof AppErrorImpl) {
+      throw error;
+    }
+
+    if (
+      error instanceof TokenExpiredError ||
+      error instanceof JsonWebTokenError ||
+      error instanceof NotBeforeError
+    ) {
+      throw new UnAuthenticatedError("The session is expired!");
+    }
+
+    throw error;
   }
 };
 
