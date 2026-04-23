@@ -34,7 +34,7 @@ const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
       jwtSecret,
     ) as JwtPayloadType;
 
-    if (!payload.ownerId && !payload.userId) {
+    if (!payload.userId && !payload.customerId) {
       throw new BadRequestError("Couldn't verify the token!");
     }
 
