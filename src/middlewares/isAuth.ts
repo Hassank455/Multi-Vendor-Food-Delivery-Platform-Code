@@ -51,12 +51,14 @@ const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
       throw error;
     }
 
-    if (
-      error instanceof TokenExpiredError ||
-      error instanceof JsonWebTokenError ||
-      error instanceof NotBeforeError
-    ) {
-      throw new UnAuthenticatedError("The session is expired!");
+    if (error instanceof TokenExpiredError) {
+      throw new UnAuthenticatedError(
+        "Your session has expired, please log in again",
+      );
+    }
+
+    if (error instanceof JsonWebTokenError || error instanceof NotBeforeError) {
+      throw new UnAuthenticatedError("Invalid authentication credentials");
     }
 
     throw error;
