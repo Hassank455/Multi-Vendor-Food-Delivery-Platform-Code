@@ -5,12 +5,13 @@ import { Response, NextFunction } from "express";
 import { CustomRequest } from "../common/tdos";
 
 const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
-  const authorization = req.headers["authorization"];
+  const authorization = req.get("authorization");
   if (!authorization) {
     throw new UnAuthenticatedError("Please provide the authorization header");
   }
-  const token: string = authorization.split(" ")[1];
-  if (!token) {
+
+  const [scheme, token] = authorization.split(" ");
+  if (scheme !== "Bearer" || !token) {
     throw new UnAuthenticatedError(
       "You must be logged in to access this endpoint",
     );
