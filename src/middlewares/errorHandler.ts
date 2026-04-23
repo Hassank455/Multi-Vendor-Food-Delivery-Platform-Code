@@ -7,12 +7,19 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   };
   if (err.code === "P2025") {
     defaultError.statusCode = 404;
-    defaultError.message = `${err.meta.modelName} not found!`;
+    defaultError.message = err.meta?.modelName
+      ? `${err.meta.modelName} not found!`
+      : "Resource not found!";
   }
 
   if (err.code === "P2002") {
     defaultError.statusCode = 400;
-    defaultError.message = `The fields (${err.meta.target.join(" ")}) must be unique`;
+    const targetFields = Array.isArray(err.meta?.target)
+      ? err.meta.target.join(" ")
+      : null;
+    defaultError.message = targetFields
+      ? `The fields (${targetFields}) must be unique`
+      : "The provided fields must be unique";
   }
   res.status(defaultError.statusCode).json({
     message: defaultError.message,
