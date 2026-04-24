@@ -1,6 +1,7 @@
 import express from "express";
 import prisma from "./lib/prisma";
 import routes from "./routes";
+import { errorHandler } from "./middlewares/index";
 
 const app = express();
 
@@ -22,6 +23,6 @@ app.get("/", async (req, res) => {
 app.use("/api/v1", routes);
 
 // Global error handler
-// app.use(errorHandler);
+app.use(errorHandler);
 
 export default app;
