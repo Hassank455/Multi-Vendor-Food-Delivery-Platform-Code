@@ -1,5 +1,5 @@
-const winston = require("winston");
-const dotenv = require("dotenv");
+import winston from "winston";
+import dotenv from "dotenv";
 dotenv.config();
 
 // date + logger level + message
