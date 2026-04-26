@@ -1,11 +1,17 @@
 import { Router } from "express";
-import { CartController } from "./cart.controller";
-import { isAuth } from "../../middlewares";
+import { container } from "../../container";
+import { isAuth, validate } from "../../middlewares";
+import * as cartValidators from "./cart.validation";
 
 const router = Router();
-const cartController = new CartController();
+const cartController = container.cartController;
 
-router.post("/items", isAuth, cartController.addItemToCart);
+router.post(
+  "/items",
+  isAuth,
+  validate(cartValidators.addItemToCartSchema),
+  cartController.addItemToCart,
+);
 
 router.get("/", isAuth, (req, res) => {
   res.json({ message: "Get cart" });

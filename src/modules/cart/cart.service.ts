@@ -1,4 +1,4 @@
-import { NotFoundError } from "../../errors";
+import { NotFoundError, ForbiddenError, BadRequestError } from "../../errors";
 import prisma from "../../lib/prisma";
 import { CartRepository } from "./cart.repository";
 
@@ -6,32 +6,94 @@ export class CartService {
   constructor(private cartRepository: CartRepository) {}
 
   async createCart(customerId: number) {
-    // Check if the customer is existing
+    let cart = await this.cartRepository.findCartByCustomerId(customerId);
+    if (!cart) {
+      cart = await this.cartRepository.createCart(customerId);
+    }
+    return cart;
   }
 
-  async getCartByCustomerId(customerId: number) {}
+  async getCartByCustomerId(customerId: number) {
+    let cart = await this.cartRepository.findCartByCustomerId(customerId);
+    if (!cart) {
+      cart = await this.createCart(customerId);
+    }
+    return cart;
+  }
 
-  async addItemToCart(
-    customerId: number,
-    cartId: number,
-    productId: number,
-    quantity: number,
-  ) {
-    const result = await prisma.$transaction(async tx => {
+  async addItemToCart(customerId: number, productId: number) {
+    const cart = await prisma.$transaction(async tx => {
       // Check if the cart exists
-      const cart = await tx.cart.findUnique({
-        where: { id: cartId },
-      });
+      const cart = await this.getCartByCustomerId(customerId);
 
       if (!cart) {
         throw new NotFoundError("Cart not found");
       }
       // Ensure that the cart belongs to the customer making the request
       if (cart.customerId !== customerId) {
-        // throw 403 error;
+        throw new ForbiddenError("Access denied to the specified cart");
       }
-      // Create a new cart if there is no cart for the customer
+
+      // check if the product exists
+      const menuItem = await tx.menuItem.findUnique({
+        where: {
+          id: productId,
+        },
+      });
+      if (!menuItem) {
+        throw new NotFoundError("Product not found");
+      }
+      if (!menuItem.isAvailable) {
+        throw new BadRequestError("Product is not available for purchase");
+      }
+
+      // check if the item already exists in the cart
+      const cartItem = await tx.cartItem.findUnique({
+        where: {
+          cartId_menuItemId: {
+            cartId: cart.id,
+            menuItemId: menuItem.id,
+          },
+        },
+      });
+      if (cartItem) {
+        // If the item already exists, update the quantity
+        await tx.cartItem.update({
+          where: {
+            id: cartItem.id,
+          },
+          data: {
+            quantity: cartItem.quantity + 1,
+          },
+        });
+      } else {
+        // If the item does not exist, add it to the cart
+        await tx.cartItem.create({
+          data: {
+            cartId: cart.id,
+            menuItemId: menuItem.id,
+            quantity: 1,
+            price: menuItem.price,
+          },
+        });
+      }
+
+      // Return the updated cart with the new item added
+      return await tx.cart.findUnique({
+        where: {
+          id: cart.id,
+        },
+        include: {
+          items: {
+            include: {
+              menuItem: true,
+            },
+          },
+        },
+      });
     });
+
+    return cart;
   }
 
   async removeItemFromCart(cartId: number, productId: number) {}
