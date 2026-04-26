@@ -1,23 +1,40 @@
 import { Request, Response } from "express";
 import { CartService } from "./cart.service";
+import { StatusCodes } from "http-status-codes";
+import { CustomRequest } from "../../common/tdos";
 
 export class CartController {
   constructor(private cartService: CartService) {}
 
   async createCart(req: Request, res: Response) {
     const { customerId } = req.body;
+
     const cart = await this.cartService.createCart(customerId);
+
+    res
+      .status(StatusCodes.CREATED)
+      .json({ data: cart, message: "Cart created successfully" });
   }
 
-  async getCartByCustomerId(req: Request, res: Response) {}
+  async getCartByCustomerId(req: CustomRequest, res: Response) {
+    const cart = await this.cartService.getCartByCustomerId(req.customer!.id);
 
-  async addItemToCart(req: Request, res: Response) {
+    res.json({ data: cart });
+  }
+
+  async addItemToCart(req: CustomRequest, res: Response) {
     /**
      * Ensure that the user is authenticated
      * Create zod schema for the required fields in the req.body
      * Call the cartService.addItemToCart method with the appropriate parameters
      * Handle the response and send back the appropriate status code and message
-    */
+     */
+    const cart = await this.cartService.addItemToCart(
+      req.customer!.id,
+      req.body.menuItemId,
+    );
+
+    res.json({ data: cart, message: "Item added to cart successfully" });
   }
 
   async removeItemFromCart(req: Request, res: Response) {}
