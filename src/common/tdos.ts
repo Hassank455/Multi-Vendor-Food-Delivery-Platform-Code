@@ -7,5 +7,4 @@ export interface CustomRequest extends Request {
   customer?: {
     id: number;
   };
-  storeId?: string;
 }
