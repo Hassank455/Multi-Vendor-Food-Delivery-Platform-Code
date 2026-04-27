@@ -37,6 +37,19 @@ export class CartController {
     res.json({ data: cart, message: "Item added to cart successfully" });
   }
 
+  // تحديد الكمية مباشرة
+  async updateCartItemQuantity(req: Request, res: Response) {
+    const cart = await this.cartService.updateQuantity(req.body);
+    res.status(StatusCodes.OK).json({
+      message: "Cart item quantity updated successfully",
+      data: cart,
+    });
+  }
+
+  async increaseCartItemQuantity(req: Request, res: Response) {}
+
+  async decreaseCartItemQuantity(req: Request, res: Response) {}
+
   async removeItemFromCart(req: Request, res: Response) {}
 
   async clearCart(req: Request, res: Response) {}

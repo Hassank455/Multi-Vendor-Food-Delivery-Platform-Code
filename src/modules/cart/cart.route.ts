@@ -13,6 +13,14 @@ router.post(
   cartController.addItemToCart,
 );
 
+// we can the end point like this : /:cartId/items/:productId/increase
+router.patch(
+  "/items/:productId",
+  isAuth,
+  validate(cartValidators.updateCartItemQuantitySchema),
+  cartController.increaseCartItemQuantity,
+);
+
 router.get("/", isAuth, (req, res) => {
   res.json({ message: "Get cart" });
 });
