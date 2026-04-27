@@ -2,6 +2,8 @@ import express from "express";
 import prisma from "./lib/prisma";
 import routes from "./routes";
 import { errorHandler } from "./middlewares/index";
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocument from './config/swagger.json';
 
 const app = express();
 
@@ -21,6 +23,9 @@ app.get("/", async (req, res) => {
 });
 
 app.use("/api/v1", routes);
+
+// Swagger Docs Setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Global error handler
 app.use(errorHandler);

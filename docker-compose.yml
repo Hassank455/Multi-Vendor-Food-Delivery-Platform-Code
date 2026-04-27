@@ -13,6 +13,11 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     restart: always
+    volumes:
+      # Mount the entire project directory to /app in the container, excluding node_modules
+      - .:/app
+      - /app/node_modules
+    command: pnpm dev
 
   db:
     image: postgres:16-alpine
