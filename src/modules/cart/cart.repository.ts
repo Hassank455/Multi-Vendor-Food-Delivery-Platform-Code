@@ -58,6 +58,46 @@ export class CartRepository {
     });
   }
 
+  async increaseCartItemQuantity(
+    cartId: number,
+    menuItemId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).cartItem.update({
+      where: {
+        cartId_menuItemId: {
+          cartId: cartId,
+          menuItemId: menuItemId,
+        },
+      },
+      data: {
+        quantity: {
+          increment: 1,
+        },
+      },
+    });
+  }
+
+  async decreaseCartItemQuantity(
+    cartId: number,
+    menuItemId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).cartItem.update({
+      where: {
+        cartId_menuItemId: {
+          cartId: cartId,
+          menuItemId: menuItemId,
+        },
+      },
+      data: {
+        quantity: {
+          decrement: 1,
+        },
+      },
+    });
+  }
+
   async getCartDetails(customerId: number, tx?: PrismaTransaction) {
     return await this.db(tx).cart.findFirst({
       where: {

@@ -1,7 +1,10 @@
 import { NotFoundError, ForbiddenError, BadRequestError } from "../../errors";
 import prisma from "../../lib/prisma";
 import { CartRepository } from "./cart.repository";
-import { UpdateCartItemQuantityDto } from "./cart.dto";
+import {
+  UpdateCartItemQuantityDto,
+  AdjustCartItemQuantityDto,
+} from "./cart.dto";
 
 export class CartService {
   constructor(private cartRepository: CartRepository) {}
@@ -130,6 +133,83 @@ export class CartService {
           cart.id,
           dto.menuItemId,
           dto.quantity,
+          tx,
+        );
+      }
+
+      // Return the updated cart with the new item added
+      return this.cartRepository.getCartDetails(dto.customerId, tx);
+    });
+  }
+
+  async increaseCartItemQuantity(dto: AdjustCartItemQuantityDto) {
+    return prisma.$transaction(async (tx) => {
+      // Check if the cart exists
+      let cart = await this.cartRepository.findCartByCustomerId(
+        dto.customerId,
+        tx,
+      );
+
+      if (!cart) {
+        throw new NotFoundError("Cart not found");
+      }
+      // Ensure that the cart belongs to the customer making the request
+      if (cart.customerId !== dto.customerId) {
+        throw new ForbiddenError("Access denied to the specified cart");
+      }
+
+      // ensure that the item is exists in the cart
+      const existingItem = await this.cartRepository.findCartItem(
+        cart.id,
+        dto.menuItemId,
+        tx,
+      );
+      if (!existingItem) {
+        throw new Error("Product not found in cart");
+      }
+      // i used tne increaseCartItemQuantity instead of updateCartItemQuantity to practice more with prisma transactions and to make the code more readable, but we can use the updateCartItemQuantity as well by passing the existing quantity + 1
+      await this.cartRepository.increaseCartItemQuantity(
+        cart.id,
+        dto.menuItemId,
+        tx,
+      );
+
+      // Return the updated cart with the new item added
+      return this.cartRepository.getCartDetails(dto.customerId, tx);
+    });
+  }
+
+  async decreaseCartItemQuantity(dto: AdjustCartItemQuantityDto) {
+    return prisma.$transaction(async (tx) => {
+      // Check if the cart exists
+      let cart = await this.cartRepository.findCartByCustomerId(
+        dto.customerId,
+        tx,
+      );
+
+      if (!cart) {
+        throw new NotFoundError("Cart not found");
+      }
+      // Ensure that the cart belongs to the customer making the request
+      if (cart.customerId !== dto.customerId) {
+        throw new ForbiddenError("Access denied to the specified cart");
+      }
+
+      // ensure that the item is exists in the cart
+      const existingItem = await this.cartRepository.findCartItem(
+        cart.id,
+        dto.menuItemId,
+        tx,
+      );
+      if (!existingItem) {
+        throw new Error("Product not found in cart");
+      }
+      if (existingItem.quantity === 1) {
+        // TODO: we can remove the item from the cart if the quantity is 1, but for now we will just update the quantity to 0
+      } else {
+        await this.cartRepository.decreaseCartItemQuantity(
+          cart.id,
+          dto.menuItemId,
           tx,
         );
       }

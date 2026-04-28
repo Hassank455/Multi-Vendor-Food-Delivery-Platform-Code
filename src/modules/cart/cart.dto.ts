@@ -3,3 +3,8 @@ export interface UpdateCartItemQuantityDto {
   menuItemId: number;
   quantity: number;
 }
+
+export interface AdjustCartItemQuantityDto {
+  customerId: number;
+  menuItemId: number;
+}

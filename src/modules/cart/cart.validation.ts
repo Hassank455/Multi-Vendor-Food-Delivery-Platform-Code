@@ -2,7 +2,7 @@ import * as z from "zod";
 
 const addItemToCartSchema = z.object({
   body: z.object({
-    menuItemId: z.number().positive(),
+    menuItemId: z.number().int().positive(),
   }),
   query: z.object({}),
   params: z.object({}),
@@ -10,14 +10,29 @@ const addItemToCartSchema = z.object({
 
 const updateCartItemQuantitySchema = z.object({
   body: z.object({
-    customerId: z.number().positive(),
+    customerId: z.number().int().positive(),
     quantity: z.number().min(0),
   }),
   query: z.object({}),
   params: z.object({
     // coerce mean convert string to number
-    menuItemId: z.coerce.number().positive(),
+    menuItemId: z.coerce.number().int().positive(),
   }),
 });
 
-export { addItemToCartSchema, updateCartItemQuantitySchema };
+
+const adjustCartItemQuantitySchema = z.object({
+  body: z.object({
+    customerId: z.number().int().positive(),
+  }),
+  params: z.object({
+    // coerce mean convert string to number
+    menuItemId: z.coerce.number().int().positive(),
+  }),
+});
+
+export {
+  addItemToCartSchema,
+  updateCartItemQuantitySchema,
+  adjustCartItemQuantitySchema,
+};
