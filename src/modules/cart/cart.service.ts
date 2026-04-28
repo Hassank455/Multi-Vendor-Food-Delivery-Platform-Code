@@ -22,7 +22,7 @@ export class CartService {
     return cart;
   }
 
-  async addItemToCart(customerId: number, productId: number) {
+  async addItemToCart(customerId: number, menuItemId: number) {
     const cart = await prisma.$transaction(async (tx) => {
       // Check if the cart exists
       const cart = await this.getCartByCustomerId(customerId);
@@ -38,7 +38,7 @@ export class CartService {
       // check if the product exists
       const menuItem = await tx.menuItem.findUnique({
         where: {
-          id: productId,
+          id: menuItemId,
         },
       });
       if (!menuItem) {
@@ -139,7 +139,7 @@ export class CartService {
     });
   }
 
-  async removeItemFromCart(cartId: number, productId: number) {}
+  async removeItemFromCart(cartId: number, menuItemId: number) {}
 
   async clearCart(cartId: number) {}
 

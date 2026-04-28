@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { container } from "../../container";
 import { isAuth, validate } from "../../middlewares";
+import asyncHandler from "../../utils/asyncHandler";
 import * as cartValidators from "./cart.validation";
 
 const router = Router();
@@ -10,15 +11,15 @@ router.post(
   "/items",
   isAuth,
   validate(cartValidators.addItemToCartSchema),
-  cartController.addItemToCart,
+  asyncHandler(cartController.addItemToCart),
 );
 
-// we can the end point like this : /:cartId/items/:productId/increase
+// we can the end point like this : /:cartId/items/:menuItemId/increase
 router.patch(
-  "/items/:productId",
-  isAuth,
+  "/items/:menuItemId",
+  // isAuth,
   validate(cartValidators.updateCartItemQuantitySchema),
-  cartController.increaseCartItemQuantity,
+  asyncHandler(cartController.updateCartItemQuantity),
 );
 
 router.get("/", isAuth, (req, res) => {

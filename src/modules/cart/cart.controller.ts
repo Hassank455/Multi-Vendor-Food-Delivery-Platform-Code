@@ -4,7 +4,12 @@ import { StatusCodes } from "http-status-codes";
 import { CustomRequest } from "../../common/tdos";
 
 export class CartController {
-  constructor(private cartService: CartService) {}
+  constructor(private cartService: CartService) {
+    this.createCart = this.createCart.bind(this);
+    this.getCartByCustomerId = this.getCartByCustomerId.bind(this);
+    this.addItemToCart = this.addItemToCart.bind(this);
+    this.updateCartItemQuantity = this.updateCartItemQuantity.bind(this);
+  }
 
   async createCart(req: Request, res: Response) {
     const { customerId } = req.body;
@@ -39,7 +44,11 @@ export class CartController {
 
   // تحديد الكمية مباشرة
   async updateCartItemQuantity(req: Request, res: Response) {
-    const cart = await this.cartService.updateQuantity(req.body);
+    const cart = await this.cartService.updateQuantity({
+      customerId: req.body.customerId,
+      menuItemId: Number(req.params.menuItemId),
+      quantity: req.body.quantity,
+    });
     res.status(StatusCodes.OK).json({
       message: "Cart item quantity updated successfully",
       data: cart,
