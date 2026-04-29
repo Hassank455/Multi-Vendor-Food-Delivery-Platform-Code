@@ -2,10 +2,10 @@ import * as z from "zod";
 
 const addItemToCartSchema = z.object({
   body: z.object({
+    customerId: z.number().int().positive(),
     menuItemId: z.number().int().positive(),
+    quantity: z.number().min(0),
   }),
-  query: z.object({}),
-  params: z.object({}),
 });
 
 const updateCartItemQuantitySchema = z.object({
@@ -19,7 +19,6 @@ const updateCartItemQuantitySchema = z.object({
     menuItemId: z.coerce.number().int().positive(),
   }),
 });
-
 
 const adjustCartItemQuantitySchema = z.object({
   body: z.object({

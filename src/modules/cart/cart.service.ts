@@ -4,8 +4,11 @@ import { CartRepository } from "./cart.repository";
 import {
   UpdateCartItemQuantityDto,
   AdjustCartItemQuantityDto,
+  AddToCartDto,
 } from "./cart.dto";
+import type { Prisma } from "../../generated/prisma/client";
 
+type PrismaTransaction = Prisma.TransactionClient;
 export class CartService {
   constructor(private cartRepository: CartRepository) {}
 
@@ -25,25 +28,32 @@ export class CartService {
     return cart;
   }
 
-  async addItemToCart(customerId: number, menuItemId: number) {
+  async getMenuItemDetails(menuItemId: number, tx?: PrismaTransaction) {
+    const menuItem = await this.cartRepository.getMenuItemDetails(
+      menuItemId,
+      tx,
+    );
+    if (!menuItem) {
+      throw new NotFoundError("Menu item not found");
+    }
+    return menuItem;
+  }
+
+  async addItemToCart(dto: AddToCartDto) {
     const cart = await prisma.$transaction(async (tx) => {
       // Check if the cart exists
-      const cart = await this.getCartByCustomerId(customerId);
+      let cart = await this.getCartByCustomerId(dto.customerId);
 
       if (!cart) {
-        throw new NotFoundError("Cart not found");
+        cart = await this.cartRepository.createCart(dto.customerId, tx);
       }
       // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== customerId) {
+      if (cart.customerId !== dto.customerId) {
         throw new ForbiddenError("Access denied to the specified cart");
       }
 
       // check if the product exists
-      const menuItem = await tx.menuItem.findUnique({
-        where: {
-          id: menuItemId,
-        },
-      });
+      const menuItem = await this.getMenuItemDetails(dto.menuItemId, tx);
       if (!menuItem) {
         throw new NotFoundError("Product not found");
       }
@@ -52,49 +62,32 @@ export class CartService {
       }
 
       // check if the item already exists in the cart
-      const cartItem = await tx.cartItem.findUnique({
-        where: {
-          cartId_menuItemId: {
-            cartId: cart.id,
-            menuItemId: menuItem.id,
-          },
-        },
-      });
-      if (cartItem) {
+      const existingCartItem = await this.cartRepository.findCartItem(
+        cart.id,
+        dto.menuItemId,
+        tx,
+      );
+      if (existingCartItem) {
         // If the item already exists, update the quantity
-        await tx.cartItem.update({
-          where: {
-            id: cartItem.id,
-          },
-          data: {
-            quantity: cartItem.quantity + 1,
-          },
-        });
+        await this.cartRepository.updateCartItemQuantity(
+          cart.id,
+          dto.menuItemId,
+          existingCartItem.quantity + dto.quantity,
+          tx,
+        );
       } else {
         // If the item does not exist, add it to the cart
-        await tx.cartItem.create({
-          data: {
-            cartId: cart.id,
-            menuItemId: menuItem.id,
-            quantity: 1,
-            price: menuItem.price,
-          },
-        });
+        await this.cartRepository.createCartItem(
+          cart.id,
+          dto.menuItemId,
+          dto.quantity,
+          menuItem.price,
+          tx,
+        );
       }
 
       // Return the updated cart with the new item added
-      return await tx.cart.findUnique({
-        where: {
-          id: cart.id,
-        },
-        include: {
-          items: {
-            include: {
-              menuItem: true,
-            },
-          },
-        },
-      });
+      return await this.cartRepository.getCartDetails(dto.customerId, tx);
     });
 
     return cart;
@@ -117,12 +110,12 @@ export class CartService {
       }
 
       // ensure that the item is exists in the cart
-      const existingItem = await this.cartRepository.findCartItem(
+      const existingCartItem = await this.cartRepository.findCartItem(
         cart.id,
         dto.menuItemId,
         tx,
       );
-      if (!existingItem) {
+      if (!existingCartItem) {
         throw new Error("Product not found in cart");
       }
 
@@ -159,12 +152,12 @@ export class CartService {
       }
 
       // ensure that the item is exists in the cart
-      const existingItem = await this.cartRepository.findCartItem(
+      const existingCartItem = await this.cartRepository.findCartItem(
         cart.id,
         dto.menuItemId,
         tx,
       );
-      if (!existingItem) {
+      if (!existingCartItem) {
         throw new Error("Product not found in cart");
       }
       // i used tne increaseCartItemQuantity instead of updateCartItemQuantity to practice more with prisma transactions and to make the code more readable, but we can use the updateCartItemQuantity as well by passing the existing quantity + 1
@@ -196,15 +189,15 @@ export class CartService {
       }
 
       // ensure that the item is exists in the cart
-      const existingItem = await this.cartRepository.findCartItem(
+      const existingCartItem = await this.cartRepository.findCartItem(
         cart.id,
         dto.menuItemId,
         tx,
       );
-      if (!existingItem) {
+      if (!existingCartItem) {
         throw new Error("Product not found in cart");
       }
-      if (existingItem.quantity === 1) {
+      if (existingCartItem.quantity === 1) {
         // TODO: we can remove the item from the cart if the quantity is 1, but for now we will just update the quantity to 0
       } else {
         await this.cartRepository.decreaseCartItemQuantity(

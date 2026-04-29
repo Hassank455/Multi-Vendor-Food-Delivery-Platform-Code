@@ -8,7 +8,7 @@ const cartController = container.cartController;
 
 router.post(
   "/items",
-  isAuth,
+  // isAuth,
   validate(cartValidators.addItemToCartSchema),
   cartController.addItemToCart,
 );

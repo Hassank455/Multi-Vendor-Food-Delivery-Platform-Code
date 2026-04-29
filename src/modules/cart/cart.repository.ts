@@ -9,8 +9,8 @@ export class CartRepository {
     return tx ?? prisma;
   }
 
-  async createCart(customerId: number) {
-    return await prisma.cart.create({
+  async createCart(customerId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).cart.create({
       data: {
         customerId,
       },
@@ -35,6 +35,31 @@ export class CartRepository {
           cartId,
           menuItemId,
         },
+      },
+    });
+  }
+
+  async getMenuItemDetails(menuItemId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).menuItem.findUnique({
+      where: {
+        id: menuItemId,
+      },
+    });
+  }
+
+  async createCartItem(
+    cartId: number,
+    menuItemId: number,
+    quantity: number,
+    price: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).cartItem.create({
+      data: {
+        cartId,
+        menuItemId,
+        quantity,
+        price,
       },
     });
   }

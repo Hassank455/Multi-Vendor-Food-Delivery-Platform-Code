@@ -6,6 +6,7 @@ import asyncHandler from "../../utils/asyncHandler";
 import {
   UpdateCartItemQuantityDto,
   AdjustCartItemQuantityDto,
+  AddToCartDto,
 } from "./cart.dto";
 
 export class CartController {
@@ -33,18 +34,16 @@ export class CartController {
   }
 
   async addItemToCart(req: CustomRequest, res: Response) {
-    /**
-     * Ensure that the user is authenticated
-     * Create zod schema for the required fields in the req.body
-     * Call the cartService.addItemToCart method with the appropriate parameters
-     * Handle the response and send back the appropriate status code and message
-     */
-    const cart = await this.cartService.addItemToCart(
-      req.customer!.id,
-      req.body.menuItemId,
-    );
+    const dto: AddToCartDto = {
+      customerId: req.body.customerId,
+      menuItemId: req.body.menuItemId,
+      quantity: req.body.quantity,
+    };
+    const cart = await this.cartService.addItemToCart(dto);
 
-    res.json({ data: cart, message: "Item added to cart successfully" });
+    res
+      .status(StatusCodes.CREATED)
+      .json({ data: cart, message: "Item added to cart successfully" });
   }
 
   updateCartItemQuantity = asyncHandler(async (req: Request, res: Response) => {
@@ -68,7 +67,7 @@ export class CartController {
 
       const cart = await this.cartService.increaseCartItemQuantity(dto);
 
-      res.status(200).json({
+      res.status(StatusCodes.OK).json({
         message: "Cart item quantity increased successfully",
         data: cart,
       });
@@ -84,7 +83,7 @@ export class CartController {
 
       const cart = await this.cartService.decreaseCartItemQuantity(dto);
 
-      res.status(200).json({
+      res.status(StatusCodes.OK).json({
         message: "Cart item quantity decreased successfully",
         data: cart,
       });
