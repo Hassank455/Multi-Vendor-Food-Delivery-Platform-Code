@@ -4,6 +4,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   const defaultError = {
     statusCode: err.statusCode || 500,
     message: err.message || "Something went wrong, try again later",
+    errors: err.errors || undefined,
   };
   if (err.code === "P2025") {
     defaultError.statusCode = 404;
@@ -23,5 +24,6 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   }
   res.status(defaultError.statusCode).json({
     message: defaultError.message,
+    errors: defaultError.errors,
   });
 };
