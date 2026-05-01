@@ -5,6 +5,8 @@ import {
   UpdateCartItemQuantityDto,
   AdjustCartItemQuantityDto,
   AddToCartDto,
+  CartItemResponseDto,
+  CartResponseDto,
 } from "./cart.dto";
 import type { Prisma } from "../../generated/prisma/client";
 
@@ -12,20 +14,50 @@ type PrismaTransaction = Prisma.TransactionClient;
 export class CartService {
   constructor(private cartRepository: CartRepository) {}
 
-  async createCart(customerId: number) {
+  private formatCart(cart: any, customerId: number): CartResponseDto {
+    if (!cart) {
+      return {
+        customerId,
+        subTotal: 0,
+        items: [],
+      };
+    }
+
+    const items: CartItemResponseDto[] = cart.items.map((item: any) => ({
+      menuItemId: item.menuItemId,
+      name: item.menuItem.name,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      totalPrice: item.quantity * item.price,
+      isAvailable: item.menuItem.isAvailable,
+    }));
+
+    const subTotal = items.reduce(
+      (sum: number, item: CartItemResponseDto) => sum + item.totalPrice,
+      0,
+    );
+
+    return {
+      id: cart.id,
+      customerId: cart.customerId,
+      subTotal,
+      items,
+    };
+  }
+
+  async createCart(customerId: number): Promise<CartResponseDto> {
     let cart = await this.cartRepository.findCartByCustomerId(customerId);
     if (!cart) {
       cart = await this.cartRepository.createCart(customerId);
     }
-    return cart;
+
+    const cartDetails = await this.cartRepository.getCartDetails(customerId);
+    return this.formatCart(cartDetails, customerId);
   }
 
-  async getCartByCustomerId(customerId: number) {
-    let cart = await this.cartRepository.findCartByCustomerId(customerId);
-    if (!cart) {
-      cart = await this.createCart(customerId);
-    }
-    return cart;
+  async getMyCart(customerId: number): Promise<CartResponseDto> {
+    const cart = await this.cartRepository.getCartDetails(customerId);
+    return this.formatCart(cart, customerId);
   }
 
   async getMenuItemDetails(menuItemId: number, tx?: PrismaTransaction) {
@@ -39,10 +71,13 @@ export class CartService {
     return menuItem;
   }
 
-  async addItemToCart(dto: AddToCartDto) {
+  async addItemToCart(dto: AddToCartDto): Promise<CartResponseDto> {
     const cart = await prisma.$transaction(async (tx) => {
       // Check if the cart exists
-      let cart = await this.getCartByCustomerId(dto.customerId);
+      let cart = await this.cartRepository.findCartByCustomerId(
+        dto.customerId,
+        tx,
+      );
 
       if (!cart) {
         cart = await this.cartRepository.createCart(dto.customerId, tx);
@@ -90,11 +125,13 @@ export class CartService {
       return await this.cartRepository.getCartDetails(dto.customerId, tx);
     });
 
-    return cart;
+    return this.formatCart(cart, dto.customerId);
   }
 
-  async updateQuantity(dto: UpdateCartItemQuantityDto) {
-    return prisma.$transaction(async (tx) => {
+  async updateQuantity(
+    dto: UpdateCartItemQuantityDto,
+  ): Promise<CartResponseDto> {
+    const cart = await prisma.$transaction(async (tx) => {
       // Check if the cart exists
       let cart = await this.cartRepository.findCartByCustomerId(
         dto.customerId,
@@ -133,10 +170,14 @@ export class CartService {
       // Return the updated cart with the new item added
       return this.cartRepository.getCartDetails(dto.customerId, tx);
     });
+
+    return this.formatCart(cart, dto.customerId);
   }
 
-  async increaseCartItemQuantity(dto: AdjustCartItemQuantityDto) {
-    return prisma.$transaction(async (tx) => {
+  async increaseCartItemQuantity(
+    dto: AdjustCartItemQuantityDto,
+  ): Promise<CartResponseDto> {
+    const cart = await prisma.$transaction(async (tx) => {
       // Check if the cart exists
       let cart = await this.cartRepository.findCartByCustomerId(
         dto.customerId,
@@ -170,10 +211,14 @@ export class CartService {
       // Return the updated cart with the new item added
       return this.cartRepository.getCartDetails(dto.customerId, tx);
     });
+
+    return this.formatCart(cart, dto.customerId);
   }
 
-  async decreaseCartItemQuantity(dto: AdjustCartItemQuantityDto) {
-    return prisma.$transaction(async (tx) => {
+  async decreaseCartItemQuantity(
+    dto: AdjustCartItemQuantityDto,
+  ): Promise<CartResponseDto> {
+    const cart = await prisma.$transaction(async (tx) => {
       // Check if the cart exists
       let cart = await this.cartRepository.findCartByCustomerId(
         dto.customerId,
@@ -210,6 +255,8 @@ export class CartService {
       // Return the updated cart with the new item added
       return this.cartRepository.getCartDetails(dto.customerId, tx);
     });
+
+    return this.formatCart(cart, dto.customerId);
   }
 
   async removeItemFromCart(cartId: number, menuItemId: number) {}

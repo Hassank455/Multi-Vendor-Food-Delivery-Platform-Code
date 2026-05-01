@@ -3,21 +3,12 @@ import { CartService } from "./cart.service";
 import { StatusCodes } from "http-status-codes";
 import { CustomRequest } from "../../common/tdos";
 import asyncHandler from "../../utils/asyncHandler";
-import {
-  UpdateCartItemQuantityDto,
-  AdjustCartItemQuantityDto,
-  AddToCartDto,
-} from "./cart.dto";
+import { AdjustCartItemQuantityDto, AddToCartDto } from "./cart.dto";
 
 export class CartController {
-  constructor(private cartService: CartService) {
-    this.createCart = this.createCart.bind(this);
-    this.getCartByCustomerId = this.getCartByCustomerId.bind(this);
-    this.addItemToCart = this.addItemToCart.bind(this);
-    this.updateCartItemQuantity = this.updateCartItemQuantity.bind(this);
-  }
+  constructor(private cartService: CartService) {}
 
-  async createCart(req: Request, res: Response) {
+  createCart = asyncHandler(async (req: Request, res: Response) => {
     const { customerId } = req.body;
 
     const cart = await this.cartService.createCart(customerId);
@@ -25,15 +16,18 @@ export class CartController {
     res
       .status(StatusCodes.CREATED)
       .json({ data: cart, message: "Cart created successfully" });
-  }
+  });
 
-  async getCartByCustomerId(req: CustomRequest, res: Response) {
-    const cart = await this.cartService.getCartByCustomerId(req.customer!.id);
+  getMyCart = asyncHandler(async (req: CustomRequest, res: Response) => {
+    const customerId = req.body.customerId;
+    const cart = await this.cartService.getMyCart(customerId);
 
-    res.json({ data: cart });
-  }
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "Cart fetched successfully", data: cart });
+  });
 
-  async addItemToCart(req: CustomRequest, res: Response) {
+  addItemToCart = asyncHandler(async (req: CustomRequest, res: Response) => {
     const dto: AddToCartDto = {
       customerId: req.body.customerId,
       menuItemId: req.body.menuItemId,
@@ -43,8 +37,8 @@ export class CartController {
 
     res
       .status(StatusCodes.CREATED)
-      .json({ data: cart, message: "Item added to cart successfully" });
-  }
+      .json({ message: "Item added to cart successfully", data: cart });
+  });
 
   updateCartItemQuantity = asyncHandler(async (req: Request, res: Response) => {
     const cart = await this.cartService.updateQuantity({

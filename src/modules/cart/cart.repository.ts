@@ -129,7 +129,17 @@ export class CartRepository {
         customerId,
       },
       include: {
-        items: true,
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                name: true,
+                isAvailable: true,
+                
+              },
+            },
+          },
+        },
       },
     });
   }

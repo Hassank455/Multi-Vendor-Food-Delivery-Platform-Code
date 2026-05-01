@@ -6,6 +6,12 @@ import * as cartValidators from "./cart.validation";
 const router = Router();
 const cartController = container.cartController;
 
+router.get(
+  "/",
+  // isAuth,
+  cartController.getMyCart,
+);
+
 router.post(
   "/items",
   // isAuth,
@@ -36,9 +42,5 @@ router.patch(
   validate(cartValidators.adjustCartItemQuantitySchema),
   cartController.decreaseCartItemQuantity,
 );
-
-router.get("/", isAuth, (req, res) => {
-  res.json({ message: "Get cart" });
-});
 
 export default router;

@@ -14,3 +14,19 @@ export interface AdjustCartItemQuantityDto {
   customerId: number;
   menuItemId: number;
 }
+
+export interface CartItemResponseDto {
+  menuItemId: number;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  isAvailable: boolean;
+}
+
+export interface CartResponseDto {
+  id?: number;
+  customerId: number;
+  subTotal: number;
+  items: CartItemResponseDto[];
+}
