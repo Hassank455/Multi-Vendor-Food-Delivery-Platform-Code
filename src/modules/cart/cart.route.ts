@@ -43,4 +43,11 @@ router.patch(
   cartController.decreaseCartItemQuantity,
 );
 
+router.delete(
+  "/items/:menuItemId",
+  // isAuth,
+  validate(cartValidators.removeCartItemSchema),
+  cartController.removeItemFromCart,
+);
+
 export default router;
