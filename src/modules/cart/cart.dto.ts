@@ -30,3 +30,8 @@ export interface CartResponseDto {
   subTotal: number;
   items: CartItemResponseDto[];
 }
+
+export interface RemoveCartItemDto {
+  customerId: number;
+  menuItemId: number;
+}

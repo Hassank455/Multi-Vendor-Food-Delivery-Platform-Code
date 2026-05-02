@@ -135,10 +135,39 @@ export class CartRepository {
               select: {
                 name: true,
                 isAvailable: true,
-                
               },
             },
           },
+        },
+      },
+    });
+  }
+
+  async updateCartSubTotal(
+    cartId: number,
+    subTotal: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).cart.update({
+      where: {
+        id: cartId,
+      },
+      data: {
+        subTotal,
+      },
+    });
+  }
+
+  async removeCartItem(
+    cartId: number,
+    menuItemId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).cartItem.delete({
+      where: {
+        cartId_menuItemId: {
+          cartId,
+          menuItemId,
         },
       },
     });

@@ -3,7 +3,11 @@ import { CartService } from "./cart.service";
 import { StatusCodes } from "http-status-codes";
 import { CustomRequest } from "../../common/tdos";
 import asyncHandler from "../../utils/asyncHandler";
-import { AdjustCartItemQuantityDto, AddToCartDto } from "./cart.dto";
+import {
+  AdjustCartItemQuantityDto,
+  AddToCartDto,
+  RemoveCartItemDto,
+} from "./cart.dto";
 
 export class CartController {
   constructor(private cartService: CartService) {}
@@ -84,7 +88,19 @@ export class CartController {
     },
   );
 
-  async removeItemFromCart(req: Request, res: Response) {}
+  removeItemFromCart = asyncHandler(async (req: Request, res: Response) => {
+    const dto: RemoveCartItemDto = {
+      customerId: req.body.customerId,
+      menuItemId: Number(req.params.menuItemId),
+    };
+
+    const cart = await this.cartService.removeItemFromCart(dto);
+
+    res.status(StatusCodes.OK).json({
+      message: "Item removed from cart successfully",
+      data: cart,
+    });
+  });
 
   async clearCart(req: Request, res: Response) {}
 
