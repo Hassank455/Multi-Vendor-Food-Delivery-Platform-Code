@@ -35,3 +35,7 @@ export interface RemoveCartItemDto {
   customerId: number;
   menuItemId: number;
 }
+
+export interface ClearCartDto {
+  customerId: number;
+}

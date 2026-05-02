@@ -8,6 +8,7 @@ import {
   CartItemResponseDto,
   CartResponseDto,
   RemoveCartItemDto,
+  ClearCartDto,
 } from "./cart.dto";
 import type { Prisma } from "../../generated/prisma/client";
 
@@ -310,7 +311,30 @@ export class CartService {
     return this.formatCart(cart, dto.customerId);
   }
 
-  async clearCart(cartId: number) {}
+  async clearCart(dto: ClearCartDto) {
+    const cart = await prisma.$transaction(async (tx) => {
+      // Check if the cart exists
+      let cart = await this.cartRepository.findCartByCustomerId(
+        dto.customerId,
+        tx,
+      );
+
+      if (!cart) {
+        throw new NotFoundError("Cart not found");
+      }
+      // Ensure that the cart belongs to the customer making the request
+      if (cart.customerId !== dto.customerId) {
+        throw new ForbiddenError("Access denied to the specified cart");
+      }
+
+      await this.cartRepository.clearCart(cart.id, tx);
+
+      // Return the updated cart with the new item added
+      return this.syncCartSubTotal(dto.customerId, tx);
+    });
+
+    return this.formatCart(cart, dto.customerId);
+  }
 
   async checkoutCart(cartId: number) {}
 }

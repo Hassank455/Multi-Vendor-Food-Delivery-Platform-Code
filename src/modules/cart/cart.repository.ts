@@ -172,4 +172,12 @@ export class CartRepository {
       },
     });
   }
+
+  async clearCart(cartId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).cartItem.deleteMany({
+      where: {
+        cartId,
+      },
+    });
+  }
 }
