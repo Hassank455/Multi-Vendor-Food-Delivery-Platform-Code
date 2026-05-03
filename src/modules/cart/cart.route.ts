@@ -50,4 +50,10 @@ router.delete(
   cartController.removeItemFromCart,
 );
 
+router.delete(
+  "/clear",
+  // isAuth,
+  cartController.clearCart,
+);
+
 export default router;

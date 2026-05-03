@@ -102,7 +102,16 @@ export class CartController {
     });
   });
 
-  async clearCart(req: Request, res: Response) {}
+  clearCart = asyncHandler(async (req: Request, res: Response) => {
+    const cart = await this.cartService.clearCart({
+      customerId: req.body.customerId,
+    });
+
+    res.status(StatusCodes.OK).json({
+      message: "Cart cleared successfully",
+      data: cart,
+    });
+  });
 
   async checkoutCart(req: Request, res: Response) {}
 }
