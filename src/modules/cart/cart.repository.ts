@@ -133,8 +133,11 @@ export class CartRepository {
           include: {
             menuItem: {
               select: {
+                id: true,
                 name: true,
+                price: true,
                 isAvailable: true,
+                restaurantId: true,
               },
             },
           },
@@ -143,18 +146,16 @@ export class CartRepository {
     });
   }
 
-  async updateCartSubTotal(
+  async updateCart(
     cartId: number,
-    subTotal: number,
+    data: { subTotal?: number; restaurantId?: number | null },
     tx?: PrismaTransaction,
   ) {
     return await this.db(tx).cart.update({
       where: {
         id: cartId,
       },
-      data: {
-        subTotal,
-      },
+      data,
     });
   }
 
@@ -174,9 +175,19 @@ export class CartRepository {
   }
 
   async clearCart(cartId: number, tx?: PrismaTransaction) {
-    return await this.db(tx).cartItem.deleteMany({
+    await this.db(tx).cartItem.deleteMany({
       where: {
         cartId,
+      },
+    });
+
+    return await this.db(tx).cart.update({
+      where: {
+        id: cartId,
+      },
+      data: {
+        subTotal: 0,
+        restaurantId: null,
       },
     });
   }

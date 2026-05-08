@@ -3,6 +3,8 @@ import { OrderController } from "./order.controller";
 import { OrderService } from "./order.service";
 import { OrderRepo } from "./order.repo";
 import { CartRepository } from "../cart/cart.repository";
+import * as orderValidators from "./order.validation";
+import { isAuth, validate } from "../../middlewares";
 
 const router = Router();
 
@@ -11,6 +13,10 @@ const cartRepo = new CartRepository();
 const orderService = new OrderService(orderRepo, cartRepo);
 const orderController = new OrderController(orderService);
 
-router.post("/", orderController.placeOrder);
+router.post(
+  "/",
+  validate(orderValidators.placeOrderSchema),
+  orderController.placeOrder,
+);
 
 export default router;

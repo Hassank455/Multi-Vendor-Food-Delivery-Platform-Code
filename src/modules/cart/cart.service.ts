@@ -28,11 +28,22 @@ export class CartService {
     }
 
     const subTotal = this.calculateSubTotal(cart.items);
-    await this.cartRepository.updateCartSubTotal(cart.id, subTotal, tx);
+    const restaurantId =
+      cart.items.length > 0 ? (cart.restaurantId ?? cart.items[0].menuItem.restaurantId) : null;
+
+    await this.cartRepository.updateCart(
+      cart.id,
+      {
+        subTotal,
+        restaurantId,
+      },
+      tx,
+    );
 
     return {
       ...cart,
       subTotal,
+      restaurantId,
     };
   }
 
@@ -40,6 +51,7 @@ export class CartService {
     if (!cart) {
       return {
         customerId,
+        restaurantId: null,
         subTotal: 0,
         items: [],
       };
@@ -57,7 +69,8 @@ export class CartService {
     return {
       id: cart.id,
       customerId: cart.customerId,
-      subTotal: cart.subTotal,
+      restaurantId: cart.restaurantId ?? null,
+      subTotal: Number(cart.subTotal),
       items,
     };
   }
@@ -111,6 +124,26 @@ export class CartService {
       }
       if (!menuItem.isAvailable) {
         throw new BadRequestError("Product is not available for purchase");
+      }
+
+      if (
+        cart.restaurantId !== null &&
+        cart.restaurantId !== undefined &&
+        cart.restaurantId !== menuItem.restaurantId
+      ) {
+        throw new BadRequestError(
+          "Cart already contains items from another restaurant",
+        );
+      }
+
+      if (cart.restaurantId == null) {
+        await this.cartRepository.updateCart(
+          cart.id,
+          {
+            restaurantId: menuItem.restaurantId,
+          },
+          tx,
+        );
       }
 
       // check if the item already exists in the cart

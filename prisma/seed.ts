@@ -15,20 +15,35 @@ const prisma = new PrismaClient({
 
 const DEMO_PASSWORD = "demo123456";
 
-async function main() {
-  const [customerCount, restaurantCount, menuItemCount] = await Promise.all([
-    prisma.customer.count(),
-    prisma.restaurant.count(),
-    prisma.menuItem.count(),
-  ]);
+async function findOrCreateAddress(data: {
+  customerId: number;
+  street: string;
+  city: string;
+  buildingNo?: string;
+  postalCode?: string;
+  governorate: string;
+}) {
+  const existingAddress = await prisma.address.findFirst({
+    where: {
+      customerId: data.customerId,
+      street: data.street,
+      city: data.city,
+      buildingNo: data.buildingNo,
+      postalCode: data.postalCode,
+      governorate: data.governorate,
+    },
+  });
 
-  if (customerCount > 0 || restaurantCount > 0 || menuItemCount > 0) {
-    console.log(
-      "Seed skipped: existing customers, restaurants, or menu items were found.",
-    );
-    return;
+  if (existingAddress) {
+    return existingAddress;
   }
 
+  return await prisma.address.create({
+    data,
+  });
+}
+
+async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
   const owner = await prisma.user.upsert({
@@ -76,6 +91,25 @@ async function main() {
         phone: "0599000003",
         password: passwordHash,
       },
+    }),
+  ]);
+
+  const [customerOneAddress, customerTwoAddress] = await Promise.all([
+    findOrCreateAddress({
+      customerId: customerOne.id,
+      street: "Omar Al Mukhtar Street",
+      city: "Gaza",
+      buildingNo: "12A",
+      postalCode: "00970",
+      governorate: "Gaza",
+    }),
+    findOrCreateAddress({
+      customerId: customerTwo.id,
+      street: "Al Wehda Street",
+      city: "Gaza",
+      buildingNo: "8B",
+      postalCode: "00970",
+      governorate: "Gaza",
     }),
   ]);
 
@@ -190,6 +224,9 @@ async function main() {
   console.log("Seed completed successfully.");
   console.log(`Owner email: ${owner.email}`);
   console.log(`Customer emails: ${customerOne.email}, ${customerTwo.email}`);
+  console.log(
+    `Address IDs: ${customerOneAddress.id} for ${customerOne.email}, ${customerTwoAddress.id} for ${customerTwo.email}`,
+  );
   console.log(`Demo password: ${DEMO_PASSWORD}`);
   console.log(`Restaurant: ${restaurant.name}`);
 }
