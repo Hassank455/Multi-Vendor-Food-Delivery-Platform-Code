@@ -7,4 +7,12 @@ export class CustomerAddressRepo {
   protected db(tx?: PrismaTransaction) {
     return tx ?? prisma;
   }
+
+  async getCustomerAddresses(customerId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).customerAddress.findMany({
+      where: {
+        customerId,
+      },
+    });
+  }
 }

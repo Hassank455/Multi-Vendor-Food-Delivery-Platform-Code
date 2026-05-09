@@ -10,9 +10,15 @@ export class CustomerAddressController {
     return this.customerAddressService;
   }
 
-  getCustomerAddresses = asyncHandler(
-    async (req: Request, res: Response) => {},
-  );
+  getCustomerAddresses = asyncHandler(async (req: Request, res: Response) => {
+    const { customerId } = req.body;
+    const customerAddresses =
+      await this.service.getCustomerAddresses(customerId);
+    res.status(StatusCodes.OK).json({
+      message: "Customer addresses fetched successfully",
+      data: customerAddresses,
+    });
+  });
   getCustomerAddress = asyncHandler(async (req: Request, res: Response) => {});
   createCustomerAddress = asyncHandler(
     async (req: Request, res: Response) => {},

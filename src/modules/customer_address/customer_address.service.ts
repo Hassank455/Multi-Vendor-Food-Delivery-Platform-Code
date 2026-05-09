@@ -6,4 +6,8 @@ export class CustomerAddressService {
   get repo() {
     return this.customerAddressRepo;
   }
+
+  async getCustomerAddresses(customerId: number) {
+    return this.repo.getCustomerAddresses(customerId);
+  }
 }
