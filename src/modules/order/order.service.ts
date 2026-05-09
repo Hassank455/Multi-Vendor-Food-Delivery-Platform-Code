@@ -39,8 +39,12 @@ export class OrderService {
 
       const restaurantId = cart.restaurantId;
 
-      //TODO: ADDRESS VALIDATION
-      // await this.validateAddressOwnership(dto.customerId, dto.addressId, tx);
+      //TODO: CUSTOMER ADDRESS VALIDATION
+      // await this.validateCustomerAddressOwnership(
+      //   dto.customerId,
+      //   dto.customerAddressId,
+      //   tx,
+      // );
 
       //TODO: Validate Inventory / Stock
       const orderItems = this.buildOrderItems(cart);
@@ -52,7 +56,7 @@ export class OrderService {
 
       const createdOrder = await this.orderRepo.createOrder(
         dto.customerId,
-        dto.addressId,
+        dto.customerAddressId,
         restaurantId,
         dto.paymentMethod,
         Number(cart.subTotal),
@@ -121,25 +125,28 @@ export class OrderService {
     }
   }
 
-  // private async validateAddressOwnership(
+  // private async validateCustomerAddressOwnership(
   //   customerId: number,
-  //   addressId: number,
+  //   customerAddressId: number,
   //   tx: PrismaTransaction,
   // ) {
-  //   const address = await this.addressService.getAddressByCustomerId(
+  //   const customerAddress =
+  //     await this.customerAddressService.getCustomerAddressByCustomerId(
   //     customerId,
-  //     addressId,
+  //     customerAddressId,
   //   );
 
-  //   if (!address) {
-  //     throw new NotFoundError("Address not found");
+  //   if (!customerAddress) {
+  //     throw new NotFoundError("Customer address not found");
   //   }
 
-  //   if (address.customerId !== customerId) {
-  //     throw new ForbiddenError("Address does not belong to this customer");
+  //   if (customerAddress.customerId !== customerId) {
+  //     throw new ForbiddenError(
+  //       "Customer address does not belong to this customer",
+  //     );
   //   }
 
-  //   return address;
+  //   return customerAddress;
   // }
 
   private buildOrderItems(cart: CartForCheckout): PreparedOrderItem[] {

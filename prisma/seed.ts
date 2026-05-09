@@ -15,7 +15,7 @@ const prisma = new PrismaClient({
 
 const DEMO_PASSWORD = "demo123456";
 
-async function findOrCreateAddress(data: {
+async function findOrCreateCustomerAddress(data: {
   customerId: number;
   street: string;
   city: string;
@@ -23,7 +23,7 @@ async function findOrCreateAddress(data: {
   postalCode?: string;
   governorate: string;
 }) {
-  const existingAddress = await prisma.address.findFirst({
+  const existingCustomerAddress = await prisma.customerAddress.findFirst({
     where: {
       customerId: data.customerId,
       street: data.street,
@@ -34,11 +34,11 @@ async function findOrCreateAddress(data: {
     },
   });
 
-  if (existingAddress) {
-    return existingAddress;
+  if (existingCustomerAddress) {
+    return existingCustomerAddress;
   }
 
-  return await prisma.address.create({
+  return await prisma.customerAddress.create({
     data,
   });
 }
@@ -95,7 +95,7 @@ async function main() {
   ]);
 
   const [customerOneAddress, customerTwoAddress] = await Promise.all([
-    findOrCreateAddress({
+    findOrCreateCustomerAddress({
       customerId: customerOne.id,
       street: "Omar Al Mukhtar Street",
       city: "Gaza",
@@ -103,7 +103,7 @@ async function main() {
       postalCode: "00970",
       governorate: "Gaza",
     }),
-    findOrCreateAddress({
+    findOrCreateCustomerAddress({
       customerId: customerTwo.id,
       street: "Al Wehda Street",
       city: "Gaza",
@@ -225,7 +225,7 @@ async function main() {
   console.log(`Owner email: ${owner.email}`);
   console.log(`Customer emails: ${customerOne.email}, ${customerTwo.email}`);
   console.log(
-    `Address IDs: ${customerOneAddress.id} for ${customerOne.email}, ${customerTwoAddress.id} for ${customerTwo.email}`,
+    `Customer address IDs: ${customerOneAddress.id} for ${customerOne.email}, ${customerTwoAddress.id} for ${customerTwo.email}`,
   );
   console.log(`Demo password: ${DEMO_PASSWORD}`);
   console.log(`Restaurant: ${restaurant.name}`);

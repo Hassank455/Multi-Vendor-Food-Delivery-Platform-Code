@@ -1,0 +1,26 @@
+import { Request, Response } from "express";
+import asyncHandler from "../../utils/asyncHandler";
+import { CustomerAddressService } from "./customer_address.service";
+import { StatusCodes } from "http-status-codes";
+
+export class CustomerAddressController {
+  constructor(private customerAddressService: CustomerAddressService) {}
+
+  get service() {
+    return this.customerAddressService;
+  }
+
+  getCustomerAddresses = asyncHandler(
+    async (req: Request, res: Response) => {},
+  );
+  getCustomerAddress = asyncHandler(async (req: Request, res: Response) => {});
+  createCustomerAddress = asyncHandler(
+    async (req: Request, res: Response) => {},
+  );
+  updateCustomerAddress = asyncHandler(
+    async (req: Request, res: Response) => {},
+  );
+  deleteCustomerAddress = asyncHandler(
+    async (req: Request, res: Response) => {},
+  );
+}
