@@ -15,4 +15,17 @@ export class CustomerAddressRepo {
       },
     });
   }
+
+  async getCustomerAddress(
+    customerId: number,
+    id: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).customerAddress.findFirst({
+      where: {
+        id,
+        customerId,
+      },
+    });
+  }
 }
