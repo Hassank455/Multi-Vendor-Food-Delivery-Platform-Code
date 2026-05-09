@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
 import { CustomerAddressService } from "./customer_address.service";
 import { StatusCodes } from "http-status-codes";
+import { CustomerAddressDto } from "./customer_address.dto";
 
 export class CustomerAddressController {
   constructor(private customerAddressService: CustomerAddressService) {}
@@ -32,9 +33,23 @@ export class CustomerAddressController {
       data: customerAddress,
     });
   });
-  createCustomerAddress = asyncHandler(
-    async (req: Request, res: Response) => {},
-  );
+  createCustomerAddress = asyncHandler(async (req: Request, res: Response) => {
+    const dto: CustomerAddressDto = {
+      customerId: req.body.customerId,
+      street: req.body.street,
+      city: req.body.city,
+      buildingNo: req.body.buildingNo,
+      postalCode: req.body.postalCode,
+      governorate: req.body.governorate,
+    };
+
+    const customerAddress = await this.service.createCustomerAddress(dto);
+
+    res.status(StatusCodes.CREATED).json({
+      message: "Customer address created successfully",
+      data: customerAddress,
+    });
+  });
   updateCustomerAddress = asyncHandler(
     async (req: Request, res: Response) => {},
   );

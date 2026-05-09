@@ -19,7 +19,11 @@ router.get(
   validate(customerAddressValidators.getCustomerAddressSchema),
   customerAddressController.getCustomerAddress,
 );
-router.post("/", customerAddressController.createCustomerAddress);
+router.post(
+  "/",
+  validate(customerAddressValidators.createCustomerAddressSchema),
+  customerAddressController.createCustomerAddress,
+);
 router.patch("/:id", customerAddressController.updateCustomerAddress);
 router.delete("/:id", customerAddressController.deleteCustomerAddress);
 

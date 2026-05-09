@@ -1,5 +1,6 @@
 import { CustomerAddressRepo } from "./customer_address.repo";
 import { NotFoundError } from "../../errors";
+import { CustomerAddressDto } from "./customer_address.dto";
 
 export class CustomerAddressService {
   constructor(private customerAddressRepo: CustomerAddressRepo) {}
@@ -20,5 +21,11 @@ export class CustomerAddressService {
     }
 
     return customerAddress;
+  }
+
+  async createCustomerAddress(dto: CustomerAddressDto) {
+    
+
+    return await this.repo.createCustomerAddress(dto);
   }
 }

@@ -1,5 +1,6 @@
 import prisma from "../../lib/prisma";
 import type { Prisma } from "../../generated/prisma/client";
+import { CustomerAddressDto } from "./customer_address.dto";
 
 type PrismaTransaction = Prisma.TransactionClient;
 
@@ -25,6 +26,19 @@ export class CustomerAddressRepo {
       where: {
         id,
         customerId,
+      },
+    });
+  }
+
+  async createCustomerAddress(dto: CustomerAddressDto, tx?: PrismaTransaction) {
+    return await this.db(tx).customerAddress.create({
+      data: {
+        customerId: dto.customerId,
+        street: dto.street,
+        city: dto.city,
+        buildingNo: dto.buildingNo,
+        postalCode: dto.postalCode,
+        governorate: dto.governorate,
       },
     });
   }
