@@ -27,6 +27,7 @@ export interface CartItemResponseDto {
 export interface CartResponseDto {
   id?: number;
   customerId: number;
+  restaurantId?: number | null;
   subTotal: number;
   items: CartItemResponseDto[];
 }
