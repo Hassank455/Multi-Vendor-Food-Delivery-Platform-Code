@@ -35,3 +35,24 @@ export const createCustomerAddressSchema = z.object({
     governorate: requiredText(255),
   }),
 });
+
+export const updateCustomerAddressSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+  body: z
+    .object({
+      street: requiredText(255).optional(),
+      city: requiredText(255).optional(),
+      buildingNo: optionalNullableText(50),
+      postalCode: optionalNullableText(20),
+      governorate: requiredText(255).optional(),
+    })
+    // refine for update to ensure at least one field is provided
+    .refine(
+      (body) => Object.values(body).some((value) => value !== undefined),
+      {
+        message: "At least one field must be provided for update",
+      },
+    ),
+});

@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
 import { CustomerAddressService } from "./customer_address.service";
 import { StatusCodes } from "http-status-codes";
-import { CustomerAddressDto } from "./customer_address.dto";
+import {
+  CustomerAddressDto,
+  UpdateCustomerAddressDto,
+} from "./customer_address.dto";
 
 export class CustomerAddressController {
   constructor(private customerAddressService: CustomerAddressService) {}
@@ -50,9 +53,24 @@ export class CustomerAddressController {
       data: customerAddress,
     });
   });
-  updateCustomerAddress = asyncHandler(
-    async (req: Request, res: Response) => {},
-  );
+  updateCustomerAddress = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const dto: UpdateCustomerAddressDto = {
+      street: req.body.street,
+      city: req.body.city,
+      buildingNo: req.body.buildingNo,
+      postalCode: req.body.postalCode,
+      governorate: req.body.governorate,
+    };
+    const customerAddress = await this.service.updateCustomerAddress(
+      Number(id),
+      dto,
+    );
+    res.status(StatusCodes.OK).json({
+      message: "Customer address updated successfully",
+      data: customerAddress,
+    });
+  });
   deleteCustomerAddress = asyncHandler(
     async (req: Request, res: Response) => {},
   );

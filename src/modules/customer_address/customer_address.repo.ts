@@ -42,4 +42,23 @@ export class CustomerAddressRepo {
       },
     });
   }
+
+  async updateCustomerAddress(
+    id: number,
+    dto: Partial<CustomerAddressDto>,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).customerAddress.update({
+      where: {
+        id,
+      },
+      data: {
+        street: dto.street,
+        city: dto.city,
+        buildingNo: dto.buildingNo,
+        postalCode: dto.postalCode,
+        governorate: dto.governorate,
+      },
+    });
+  }
 }

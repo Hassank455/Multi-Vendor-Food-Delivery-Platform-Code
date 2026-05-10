@@ -24,7 +24,11 @@ router.post(
   validate(customerAddressValidators.createCustomerAddressSchema),
   customerAddressController.createCustomerAddress,
 );
-router.patch("/:id", customerAddressController.updateCustomerAddress);
+router.patch(
+  "/:id",
+  validate(customerAddressValidators.updateCustomerAddressSchema),
+  customerAddressController.updateCustomerAddress,
+);
 router.delete("/:id", customerAddressController.deleteCustomerAddress);
 
 export default router;
