@@ -13,24 +13,33 @@ const customerAddressController = new CustomerAddressController(
   customerAddressService,
 );
 
-router.get("/", customerAddressController.getCustomerAddresses);
+router.get(
+  "/",
+  isAuth,
+  validate(customerAddressValidators.getCustomerAddressesSchema),
+  customerAddressController.getCustomerAddresses,
+);
 router.get(
   "/:id",
+  isAuth,
   validate(customerAddressValidators.getCustomerAddressSchema),
   customerAddressController.getCustomerAddress,
 );
 router.post(
   "/",
+  isAuth,
   validate(customerAddressValidators.createCustomerAddressSchema),
   customerAddressController.createCustomerAddress,
 );
 router.patch(
   "/:id",
+  isAuth,
   validate(customerAddressValidators.updateCustomerAddressSchema),
   customerAddressController.updateCustomerAddress,
 );
 router.delete(
   "/:id",
+  isAuth,
   validate(customerAddressValidators.deleteCustomerAddressSchema),
   customerAddressController.deleteCustomerAddress,
 );

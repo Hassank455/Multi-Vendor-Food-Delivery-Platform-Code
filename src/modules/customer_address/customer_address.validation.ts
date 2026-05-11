@@ -17,17 +17,23 @@ const optionalNullableText = (max: number) =>
   }, z.string().trim().max(max).nullable().optional());
 
 export const getCustomerAddressSchema = z.object({
+  body: z.object({}),
+  query: z.object({}),
   params: z.object({
     id: z.coerce.number().int().positive(),
   }),
-  body: z.object({
-    customerId: z.number().int().positive(),
-  }),
+});
+
+export const getCustomerAddressesSchema = z.object({
+  body: z.object({}),
+  query: z.object({}),
+  params: z.object({}),
 });
 
 export const createCustomerAddressSchema = z.object({
+  params: z.object({}),
+  query: z.object({}),
   body: z.object({
-    customerId: z.number().int().positive(),
     street: requiredText(255),
     city: requiredText(255),
     buildingNo: optionalNullableText(50),
@@ -40,18 +46,24 @@ export const updateCustomerAddressSchema = z.object({
   params: z.object({
     id: z.coerce.number().int().positive(),
   }),
+  query: z.object({}),
   body: z
     .object({
-      customerId: z.number().int().positive(),
       street: requiredText(255).optional(),
       city: requiredText(255).optional(),
       buildingNo: optionalNullableText(50),
       postalCode: optionalNullableText(20),
       governorate: requiredText(255).optional(),
     })
-    // refine for update to ensure at least one field is provided
     .refine(
-      (body) => Object.values(body).some((value) => value !== undefined),
+      (body) =>
+        [
+          body.street,
+          body.city,
+          body.buildingNo,
+          body.postalCode,
+          body.governorate,
+        ].some((value) => value !== undefined),
       {
         message: "At least one field must be provided for update",
       },
@@ -59,10 +71,9 @@ export const updateCustomerAddressSchema = z.object({
 });
 
 export const deleteCustomerAddressSchema = z.object({
+  body: z.object({}),
+  query: z.object({}),
   params: z.object({
     id: z.coerce.number().int().positive(),
-  }),
-  body: z.object({
-    customerId: z.number().int().positive(),
   }),
 });

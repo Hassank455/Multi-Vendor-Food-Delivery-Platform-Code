@@ -1,6 +1,4 @@
-export interface CustomerAddressDto {
-  id?: number;
-  customerId: number;
+export interface CreateCustomerAddressDto {
   street: string;
   city: string;
   buildingNo?: string | null;
@@ -9,7 +7,6 @@ export interface CustomerAddressDto {
 }
 
 export interface UpdateCustomerAddressDto {
-  customerId: number;
   street?: string;
   city?: string;
   buildingNo?: string | null;

@@ -1,6 +1,9 @@
 import prisma from "../../lib/prisma";
 import type { Prisma } from "../../generated/prisma/client";
-import { CustomerAddressDto } from "./customer_address.dto";
+import {
+  CreateCustomerAddressDto,
+  UpdateCustomerAddressDto,
+} from "./customer_address.dto";
 
 type PrismaTransaction = Prisma.TransactionClient;
 
@@ -32,10 +35,14 @@ export class CustomerAddressRepo {
     });
   }
 
-  async createCustomerAddress(dto: CustomerAddressDto, tx?: PrismaTransaction) {
+  async createCustomerAddress(
+    customerId: number,
+    dto: CreateCustomerAddressDto,
+    tx?: PrismaTransaction,
+  ) {
     return await this.db(tx).customerAddress.create({
       data: {
-        customerId: dto.customerId,
+        customerId,
         street: dto.street,
         city: dto.city,
         buildingNo: dto.buildingNo,
@@ -46,14 +53,15 @@ export class CustomerAddressRepo {
   }
 
   async updateCustomerAddress(
+    customerId: number,
     id: number,
-    dto: Partial<CustomerAddressDto>,
+    dto: UpdateCustomerAddressDto,
     tx?: PrismaTransaction,
   ) {
     const result = await this.db(tx).customerAddress.updateMany({
       where: {
         id,
-        customerId: dto.customerId,
+        customerId,
         deletedAt: null,
       },
       data: {
@@ -72,7 +80,7 @@ export class CustomerAddressRepo {
     return await this.db(tx).customerAddress.findFirst({
       where: {
         id,
-        customerId: dto.customerId,
+        customerId,
         deletedAt: null,
       },
     });
