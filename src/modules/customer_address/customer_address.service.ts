@@ -4,6 +4,9 @@ import {
   CustomerAddressDto,
   UpdateCustomerAddressDto,
 } from "./customer_address.dto";
+import { LoggerService } from "../../services/logger.service";
+
+const logger = new LoggerService("customerAddress");
 
 export class CustomerAddressService {
   constructor(private customerAddressRepo: CustomerAddressRepo) {}
@@ -31,6 +34,22 @@ export class CustomerAddressService {
   }
 
   async updateCustomerAddress(id: number, dto: UpdateCustomerAddressDto) {
-    return await this.repo.updateCustomerAddress(id, dto);
+    const customerAddress = await this.repo.updateCustomerAddress(id, dto);
+
+    if (!customerAddress) {
+      throw new NotFoundError("Customer address not found");
+    }
+
+    return customerAddress;
+  }
+
+  async deleteCustomerAddress(customerId: number, id: number) {
+    const deleted = await this.repo.softDeleteCustomerAddress(customerId, id);
+
+    if (!deleted) {
+      throw new NotFoundError("Customer address not found");
+    }
+
+    return deleted;
   }
 }

@@ -29,6 +29,10 @@ router.patch(
   validate(customerAddressValidators.updateCustomerAddressSchema),
   customerAddressController.updateCustomerAddress,
 );
-router.delete("/:id", customerAddressController.deleteCustomerAddress);
+router.delete(
+  "/:id",
+  validate(customerAddressValidators.deleteCustomerAddressSchema),
+  customerAddressController.deleteCustomerAddress,
+);
 
 export default router;

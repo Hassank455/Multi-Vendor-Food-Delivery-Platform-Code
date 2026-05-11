@@ -56,6 +56,7 @@ export class CustomerAddressController {
   updateCustomerAddress = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const dto: UpdateCustomerAddressDto = {
+      customerId: req.body.customerId,
       street: req.body.street,
       city: req.body.city,
       buildingNo: req.body.buildingNo,
@@ -71,7 +72,14 @@ export class CustomerAddressController {
       data: customerAddress,
     });
   });
-  deleteCustomerAddress = asyncHandler(
-    async (req: Request, res: Response) => {},
-  );
+  deleteCustomerAddress = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { customerId } = req.body;
+
+    await this.service.deleteCustomerAddress(customerId, Number(id));
+
+    res.status(StatusCodes.OK).json({
+      message: "Customer address deleted successfully",
+    });
+  });
 }

@@ -42,6 +42,7 @@ export const updateCustomerAddressSchema = z.object({
   }),
   body: z
     .object({
+      customerId: z.number().int().positive(),
       street: requiredText(255).optional(),
       city: requiredText(255).optional(),
       buildingNo: optionalNullableText(50),
@@ -55,4 +56,13 @@ export const updateCustomerAddressSchema = z.object({
         message: "At least one field must be provided for update",
       },
     ),
+});
+
+export const deleteCustomerAddressSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    customerId: z.number().int().positive(),
+  }),
 });

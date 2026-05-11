@@ -13,6 +13,7 @@ export class CustomerAddressRepo {
     return await this.db(tx).customerAddress.findMany({
       where: {
         customerId,
+        deletedAt: null,
       },
     });
   }
@@ -26,6 +27,7 @@ export class CustomerAddressRepo {
       where: {
         id,
         customerId,
+        deletedAt: null,
       },
     });
   }
@@ -48,9 +50,11 @@ export class CustomerAddressRepo {
     dto: Partial<CustomerAddressDto>,
     tx?: PrismaTransaction,
   ) {
-    return await this.db(tx).customerAddress.update({
+    const result = await this.db(tx).customerAddress.updateMany({
       where: {
         id,
+        customerId: dto.customerId,
+        deletedAt: null,
       },
       data: {
         street: dto.street,
@@ -60,5 +64,37 @@ export class CustomerAddressRepo {
         governorate: dto.governorate,
       },
     });
+
+    if (!result.count) {
+      return null;
+    }
+
+    return await this.db(tx).customerAddress.findFirst({
+      where: {
+        id,
+        customerId: dto.customerId,
+        deletedAt: null,
+      },
+    });
+  }
+
+  async softDeleteCustomerAddress(
+    customerId: number,
+    id: number,
+    tx?: PrismaTransaction,
+  ) {
+    const deletedAt = new Date();
+    const result = await this.db(tx).customerAddress.updateMany({
+      where: {
+        id,
+        customerId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: deletedAt,
+      },
+    });
+    // Return true if a record was updated (i.e., soft-deleted), false otherwise
+    return result.count > 0;
   }
 }

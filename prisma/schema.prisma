@@ -45,6 +45,7 @@ model CustomerAddress {
   buildingNo  String?
   postalCode  String? // Not important!
   governorate String
+  deletedAt   DateTime?
 
   customer Customer @relation(fields: [customerId], references: [id])
 
