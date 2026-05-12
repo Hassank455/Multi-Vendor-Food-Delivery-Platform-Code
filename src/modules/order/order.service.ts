@@ -11,6 +11,7 @@ import { CartRepository } from "../cart/cart.repository";
 import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
 import type { Prisma } from "../../generated/prisma/client";
+import { CustomerAddressRepo } from "../customer_address/customer_address.repo";
 
 const logger = new LoggerService("order");
 type PrismaTransaction = Prisma.TransactionClient;
@@ -18,6 +19,7 @@ export class OrderService {
   constructor(
     private orderRepo: OrderRepo,
     private cartRepo: CartRepository,
+    private customerAddressRepo: CustomerAddressRepo,
   ) {}
 
   // ============== PLACE ORDER =====================
@@ -39,10 +41,14 @@ export class OrderService {
 
       const restaurantId = cart.restaurantId;
 
-      //TODO: ADDRESS VALIDATION
-      // await this.validateAddressOwnership(dto.customerId, dto.addressId, tx);
+      await this.validateCustomerAddressOwnership(
+        dto.customerId,
+        dto.customerAddressId,
+        tx,
+      );
 
       //TODO: Validate Inventory / Stock
+
       const orderItems = this.buildOrderItems(cart);
       const orderItemsData: CreateOrderItemInput[] = orderItems.map((item) => ({
         menuItemId: item.menuItemId,
@@ -52,7 +58,7 @@ export class OrderService {
 
       const createdOrder = await this.orderRepo.createOrder(
         dto.customerId,
-        dto.addressId,
+        dto.customerAddressId,
         restaurantId,
         dto.paymentMethod,
         Number(cart.subTotal),
@@ -121,26 +127,23 @@ export class OrderService {
     }
   }
 
-  // private async validateAddressOwnership(
-  //   customerId: number,
-  //   addressId: number,
-  //   tx: PrismaTransaction,
-  // ) {
-  //   const address = await this.addressService.getAddressByCustomerId(
-  //     customerId,
-  //     addressId,
-  //   );
+  private async validateCustomerAddressOwnership(
+    customerId: number,
+    customerAddressId: number,
+    tx: PrismaTransaction,
+  ) {
+    const customerAddress = await this.customerAddressRepo.getCustomerAddress(
+      customerId,
+      customerAddressId,
+      tx,
+    );
 
-  //   if (!address) {
-  //     throw new NotFoundError("Address not found");
-  //   }
+    if (!customerAddress) {
+      throw new NotFoundError("Customer address not found");
+    }
 
-  //   if (address.customerId !== customerId) {
-  //     throw new ForbiddenError("Address does not belong to this customer");
-  //   }
-
-  //   return address;
-  // }
+    return customerAddress;
+  }
 
   private buildOrderItems(cart: CartForCheckout): PreparedOrderItem[] {
     return cart.items.map((item) => ({

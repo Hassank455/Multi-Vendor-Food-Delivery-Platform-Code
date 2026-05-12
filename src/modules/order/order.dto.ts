@@ -2,7 +2,7 @@ import { PaymentMethod } from "../../generated/prisma/enums";
 
 export interface PlaceOrderDto {
   customerId: number;
-  addressId: number;
+  customerAddressId: number;
   //   paymentMethod: "STRIPE" | "PAYPAL" | "CASH_ON_DELIVERY";
   paymentMethod: PaymentMethod;
 }

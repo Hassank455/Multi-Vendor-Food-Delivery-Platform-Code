@@ -22,6 +22,15 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
       ? `The fields (${targetFields}) must be unique`
       : "The provided fields must be unique";
   }
+
+  // Handle foreign key constraint violation (e.g., when a related resource is not found)
+  // Foreign key constraint failed
+  // كان customerId=99999 غير موجود في جدول Customer، فقاعدة البيانات سترفض الإدخال، وPrisma سترمي P2003.
+  if (err.code === "P2003") {
+    defaultError.statusCode = 400;
+    defaultError.message = "Invalid reference to a related resource";
+  }
+
   res.status(defaultError.statusCode).json({
     message: defaultError.message,
     errors: defaultError.errors,

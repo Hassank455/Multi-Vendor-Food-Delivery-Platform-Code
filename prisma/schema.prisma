@@ -33,11 +33,11 @@ model Customer {
   cart      Cart?
   orders    Order[]
   reviews   Review[]
-  addresses Address[]
+  customerAddresses CustomerAddress[]
   // Can the user have multiple restaurants?
 }
 
-model Address {
+model CustomerAddress {
   id          Int     @id @default(autoincrement())
   customerId  Int
   street      String
@@ -45,6 +45,7 @@ model Address {
   buildingNo  String?
   postalCode  String? // Not important!
   governorate String
+  deletedAt   DateTime?
 
   customer Customer @relation(fields: [customerId], references: [id])
 
@@ -152,7 +153,7 @@ model CartItem {
 model Order {
   id                 Int           @id @default(autoincrement())
   customerId         Int
-  addressId          Int
+  customerAddressId  Int
   restaurantId       Int
   status             OrderStatus   @default(PENDING)
   createdAt          DateTime      @default(now())
@@ -161,8 +162,8 @@ model Order {
   discountPercentage Float?
   priceAfterDiscount Float? // Not really needed, can be calculated on the fly
 
-  address    Address    @relation(fields: [addressId], references: [id])
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  customerAddress CustomerAddress @relation(fields: [customerAddressId], references: [id])
+  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id])
 
   review       Review?
   items        OrderItem[]

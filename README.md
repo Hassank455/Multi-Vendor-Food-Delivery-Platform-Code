@@ -189,6 +189,12 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 
 ---
 
+## Development Auth Note
+
+For local development before the JWT login flow is ready, the backend can accept a temporary `x-customer-id` header and inject `req.customer.id` internally. This fallback is disabled by default and only works when both `ENABLE_DEV_AUTH_HEADER=true` and `NODE_ENV` is not `production`. Public API documentation still assumes Bearer authentication.
+
+---
+
 ## 📊ERD
 
 ![ERD](docs/erd.png)

@@ -9,7 +9,7 @@ export class OrderController {
   placeOrder = asyncHandler(async (req: Request, res: Response) => {
     const dto: PlaceOrderDto = {
       customerId: req.body.customerId,
-      addressId: req.body.addressId,
+      customerAddressId: req.body.customerAddressId,
       paymentMethod: req.body.paymentMethod,
     };
     const order = await this.orderService.placeOrder(dto);

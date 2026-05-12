@@ -13,7 +13,7 @@ export class OrderRepo {
   }
   async createOrder(
     customerId: number,
-    addressId: number,
+    customerAddressId: number,
     restaurantId: number,
     paymentMethod: PaymentMethod,
     totalPrice: number,
@@ -21,9 +21,21 @@ export class OrderRepo {
   ) {
     return await this.db(tx).order.create({
       data: {
-        customerId: customerId,
-        addressId: addressId,
-        restaurantId: restaurantId,
+        customer: {
+          connect: {
+            id: customerId,
+          },
+        },
+        customerAddress: {
+          connect: {
+            id: customerAddressId,
+          },
+        },
+        restaurant: {
+          connect: {
+            id: restaurantId,
+          },
+        },
         paymentMethod: paymentMethod,
         totalPrice: totalPrice,
       },

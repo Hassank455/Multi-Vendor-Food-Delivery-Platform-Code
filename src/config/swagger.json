@@ -15,11 +15,646 @@
     {
       "name": "Foodlify",
       "description": "API"
+    },
+    {
+      "name": "Customer Address",
+      "description": "Manage authenticated customer addresses"
     }
   ],
   "schemes": ["http"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
-  "paths": {},
-  "definitions": {}
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Provide the access token as: Bearer <token>"
+    }
+  },
+  "paths": {
+    "/api/v1/customer-addresses": {
+      "get": {
+        "tags": ["Customer Address"],
+        "summary": "List customer addresses",
+        "description": "Returns all non-deleted addresses for the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer addresses fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressListResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer addresses fetched successfully",
+                "data": [
+                  {
+                    "id": 12,
+                    "customerId": 5,
+                    "street": "Al Nasr Street",
+                    "city": "Gaza",
+                    "buildingNo": "12B",
+                    "postalCode": "00970",
+                    "governorate": "Gaza"
+                  },
+                  {
+                    "id": 13,
+                    "customerId": 5,
+                    "street": "Omar Al Mukhtar Street",
+                    "city": "Gaza",
+                    "buildingNo": null,
+                    "postalCode": null,
+                    "governorate": "Gaza"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customer Address"],
+        "summary": "Create customer address",
+        "description": "Creates a new address for the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateCustomerAddressRequest"
+            },
+            "x-examples": {
+              "fullAddress": {
+                "street": "Al Nasr Street",
+                "city": "Gaza",
+                "buildingNo": "12B",
+                "postalCode": "00970",
+                "governorate": "Gaza"
+              },
+              "withoutOptionalFields": {
+                "street": "Omar Al Mukhtar Street",
+                "city": "Gaza",
+                "governorate": "Gaza"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Customer address created successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressSingleResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address created successfully",
+                "data": {
+                  "id": 12,
+                  "customerId": 5,
+                  "street": "Al Nasr Street",
+                  "city": "Gaza",
+                  "buildingNo": "12B",
+                  "postalCode": "00970",
+                  "governorate": "Gaza"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation failed",
+                "errors": {
+                  "fieldErrors": {
+                    "street": ["String must contain at least 1 character(s)"]
+                  },
+                  "formErrors": []
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer-addresses/{id}": {
+      "get": {
+        "tags": ["Customer Address"],
+        "summary": "Get customer address by id",
+        "description": "Returns one non-deleted address owned by the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Customer address identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer address fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressSingleResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address fetched successfully",
+                "data": {
+                  "id": 12,
+                  "customerId": 5,
+                  "street": "Al Nasr Street",
+                  "city": "Gaza",
+                  "buildingNo": "12B",
+                  "postalCode": "00970",
+                  "governorate": "Gaza"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found or not owned by the authenticated customer",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Customer Address"],
+        "summary": "Update customer address",
+        "description": "Updates one address owned by the authenticated customer. At least one mutable field must be provided.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Customer address identifier"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateCustomerAddressRequest"
+            },
+            "x-examples": {
+              "partialUpdate": {
+                "city": "Khan Younis",
+                "postalCode": "00972"
+              },
+              "singleFieldUpdate": {
+                "buildingNo": "4A"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer address updated successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressSingleResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address updated successfully",
+                "data": {
+                  "id": 12,
+                  "customerId": 5,
+                  "street": "Al Nasr Street",
+                  "city": "Khan Younis",
+                  "buildingNo": "4A",
+                  "postalCode": "00972",
+                  "governorate": "Gaza"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation failed",
+                "errors": {
+                  "fieldErrors": {},
+                  "formErrors": ["At least one field must be provided for update"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found or not owned by the authenticated customer",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Customer Address"],
+        "summary": "Delete customer address",
+        "description": "Soft deletes one address owned by the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Customer address identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer address deleted successfully",
+            "schema": {
+              "$ref": "#/definitions/MessageOnlyResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address deleted successfully"
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found or not owned by the authenticated customer",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "CustomerAddress": {
+      "type": "object",
+      "required": ["id", "customerId", "street", "city", "governorate"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 12
+        },
+        "customerId": {
+          "type": "integer",
+          "format": "int32",
+          "example": 5
+        },
+        "street": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Al Nasr Street"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        },
+        "buildingNo": {
+          "type": "string",
+          "maxLength": 50,
+          "x-nullable": true,
+          "example": "12B"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20,
+          "x-nullable": true,
+          "example": "00970"
+        },
+        "governorate": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        }
+      }
+    },
+    "CreateCustomerAddressRequest": {
+      "type": "object",
+      "required": ["street", "city", "governorate"],
+      "properties": {
+        "street": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Al Nasr Street"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        },
+        "buildingNo": {
+          "type": "string",
+          "maxLength": 50,
+          "x-nullable": true,
+          "example": "12B"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20,
+          "x-nullable": true,
+          "example": "00970"
+        },
+        "governorate": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        }
+      }
+    },
+    "UpdateCustomerAddressRequest": {
+      "type": "object",
+      "description": "Provide at least one mutable field.",
+      "minProperties": 1,
+      "properties": {
+        "street": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Omar Al Mukhtar Street"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Khan Younis"
+        },
+        "buildingNo": {
+          "type": "string",
+          "maxLength": 50,
+          "x-nullable": true,
+          "example": "4A"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20,
+          "x-nullable": true,
+          "example": "00972"
+        },
+        "governorate": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        }
+      }
+    },
+    "CustomerAddressListResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer addresses fetched successfully"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomerAddress"
+          }
+        }
+      }
+    },
+    "CustomerAddressSingleResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer address fetched successfully"
+        },
+        "data": {
+          "$ref": "#/definitions/CustomerAddress"
+        }
+      }
+    },
+    "MessageOnlyResponse": {
+      "type": "object",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer address deleted successfully"
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer address not found"
+        },
+        "errors": {
+          "type": "object",
+          "description": "Optional validation or structured error details",
+          "x-nullable": true
+        }
+      }
+    },
+    "ValidationErrorResponse": {
+      "type": "object",
+      "required": ["message", "errors"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Validation failed"
+        },
+        "errors": {
+          "type": "object",
+          "properties": {
+            "formErrors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "fieldErrors": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
