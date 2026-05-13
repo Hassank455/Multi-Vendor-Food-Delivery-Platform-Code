@@ -17,8 +17,17 @@ const orderController = new OrderController(orderService);
 
 router.post(
   "/",
+  isAuth,
   validate(orderValidators.placeOrderSchema),
   orderController.placeOrder,
+);
+
+router.get("/", isAuth, orderController.getCustomerOrders);
+router.get(
+  "/:id",
+  isAuth,
+  validate(orderValidators.getCustomerOrderByIdSchema),
+  orderController.getCustomerOrderById,
 );
 
 export default router;

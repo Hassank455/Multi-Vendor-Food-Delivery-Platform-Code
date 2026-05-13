@@ -3,6 +3,8 @@ import { OrderRepo } from "./order.repo";
 import {
   CartForCheckout,
   CreateOrderItemInput,
+  CustomerOrderDetailsDto,
+  CustomerOrderListItemDto,
   PlaceOrderDto,
   PreparedOrderItem,
 } from "./order.dto";
@@ -12,7 +14,6 @@ import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
 import type { Prisma } from "../../generated/prisma/client";
 import { CustomerAddressRepo } from "../customer_address/customer_address.repo";
-
 const logger = new LoggerService("order");
 type PrismaTransaction = Prisma.TransactionClient;
 export class OrderService {
@@ -23,12 +24,12 @@ export class OrderService {
   ) {}
 
   // ============== PLACE ORDER =====================
-  async placeOrder(dto: PlaceOrderDto) {
+  async placeOrder(customerId: number, dto: PlaceOrderDto) {
     const order = await prisma.$transaction(async (tx) => {
       //TODO: Lock Cart
 
       const cart = (await this.cartRepo.getCartDetails(
-        dto.customerId,
+        customerId,
         tx,
       )) as CartForCheckout | null;
       logger.info("Cart ", { cart });
@@ -42,7 +43,7 @@ export class OrderService {
       const restaurantId = cart.restaurantId;
 
       await this.validateCustomerAddressOwnership(
-        dto.customerId,
+        customerId,
         dto.customerAddressId,
         tx,
       );
@@ -57,7 +58,7 @@ export class OrderService {
       }));
 
       const createdOrder = await this.orderRepo.createOrder(
-        dto.customerId,
+        customerId,
         dto.customerAddressId,
         restaurantId,
         dto.paymentMethod,
@@ -153,5 +154,78 @@ export class OrderService {
       unitPrice: item.price,
       totalPrice: item.quantity * item.price,
     }));
+  }
+
+  // ============== GET CUSTOMER ORDERS =====================
+  async getCustomerOrders(
+    customerId: number,
+  ): Promise<CustomerOrderListItemDto[]> {
+    const orders = await this.orderRepo.getCustomerOrders(customerId);
+    return orders.map((order) => ({
+      id: order.id,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      totalPrice: Number(order.totalPrice),
+      createdAt: order.createdAt,
+      restaurant: {
+        id: order.restaurant.id,
+        name: order.restaurant.name,
+      },
+      items: order.items.map((item) => ({
+        menuItemId: item.menuItemId,
+        name: item.menuItem.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.price),
+        totalPrice: item.quantity * Number(item.price),
+      })),
+    }));
+  }
+
+  // ============== GET CUSTOMER ORDER BY ID =====================
+  async getCustomerOrderById(
+    customerId: number,
+    orderId: number,
+  ): Promise<CustomerOrderDetailsDto> {
+    const order = await this.orderRepo.getCustomerOrderById(
+      customerId,
+      orderId,
+    );
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    return {
+      id: order.id,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      totalPrice: Number(order.totalPrice),
+      createdAt: order.createdAt,
+      restaurant: {
+        id: order.restaurant.id,
+        name: order.restaurant.name,
+      },
+      customerAddress: {
+        id: order.customerAddress.id,
+        street: order.customerAddress.street,
+        city: order.customerAddress.city,
+        buildingNo: order.customerAddress.buildingNo ?? "",
+        postalCode: order.customerAddress.postalCode ?? "",
+        governorate: order.customerAddress.governorate,
+      },
+      items: order.items.map((item) => ({
+        menuItemId: item.menuItemId,
+        name: item.menuItem.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.price),
+        totalPrice: item.quantity * Number(item.price),
+      })),
+      transactions: order.transactions.map((transaction) => ({
+        id: transaction.id,
+        amount: Number(transaction.amount),
+        method: transaction.method,
+        details: transaction.details,
+        createdAt: transaction.createdAt,
+      })),
+    };
   }
 }

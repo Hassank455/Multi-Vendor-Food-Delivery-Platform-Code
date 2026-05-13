@@ -1,8 +1,5 @@
 import prisma from "../../lib/prisma";
-import type {
-  Prisma,
-  PaymentMethod,
-} from "../../generated/prisma/client";
+import type { Prisma, PaymentMethod } from "../../generated/prisma/client";
 import type { CreateOrderItemInput } from "./order.dto";
 
 type PrismaTransaction = Prisma.TransactionClient;
@@ -71,6 +68,84 @@ export class OrderRepo {
         amount: amount,
         method: method,
         details: details,
+      },
+    });
+  }
+
+  async getCustomerOrders(customerId: number) {
+    return await this.db().order.findMany({
+      where: {
+        customerId,
+      },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  }
+
+  async getCustomerOrderById(customerId: number, orderId: number) {
+    return await this.db().order.findFirst({
+      where: {
+        id: orderId,
+        customerId,
+      },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        customerAddress: {
+          select: {
+            id: true,
+            street: true,
+            city: true,
+            buildingNo: true,
+            postalCode: true,
+            governorate: true,
+          },
+        },
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        transactions: {
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            details: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
       },
     });
   }
