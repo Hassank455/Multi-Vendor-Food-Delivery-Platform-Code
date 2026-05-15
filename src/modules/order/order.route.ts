@@ -24,6 +24,19 @@ router.post(
 
 router.get("/", isAuth, orderController.getCustomerOrders);
 router.get(
+  "/restaurant",
+  isAuth,
+  validate(orderValidators.getRestaurantOrdersSchema),
+  orderController.getRestaurantOrders,
+); // TODO: here we can also add filters like status and date range etc.
+router.get(
+  "/restaurant/:id",
+  isAuth,
+  validate(orderValidators.getRestaurantOrderDetailsSchema),
+  orderController.getRestaurantOrderDetails,
+);
+
+router.get(
   "/:id",
   isAuth,
   validate(orderValidators.getCustomerOrderByIdSchema),

@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import { OrderService } from "./order.service";
 import asyncHandler from "../../utils/asyncHandler";
-import { PlaceOrderDto } from "./order.dto";
+import { GetRestaurantOrdersQueryDto, PlaceOrderDto } from "./order.dto";
 import { StatusCodes } from "http-status-codes";
 import { CustomRequest } from "../../common/tdos";
 import { ForbiddenError } from "../../errors";
+import { OrderStatus } from "../../generated/prisma/enums";
 
 export class OrderController {
   constructor(private orderService: OrderService) {}
@@ -18,6 +19,16 @@ export class OrderController {
 
     return customerId;
   }
+  private getUserId(req: CustomRequest) {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new ForbiddenError("Restaurant owner authentication is required");
+    }
+
+    return userId;
+  }
+
   placeOrder = asyncHandler(async (req: CustomRequest, res: Response) => {
     const customerId = this.getCustomerId(req);
     const dto: PlaceOrderDto = {
@@ -58,22 +69,58 @@ export class OrderController {
   );
 
   // cancel order, only if it's in PENDING and CONFIRMED status
-  cancelCustomerOrder = asyncHandler(async (req: CustomRequest, res: Response) => {
-    const customerId = this.getCustomerId(req);
-    const orderId = Number(req.params.id);
+  cancelCustomerOrder = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const customerId = this.getCustomerId(req);
+      const orderId = Number(req.params.id);
 
-    const order = await this.orderService.cancelCustomerOrder(customerId, orderId);
+      const order = await this.orderService.cancelCustomerOrder(
+        customerId,
+        orderId,
+      );
 
-    res.status(StatusCodes.OK).json({
-      message: "Order cancelled successfully",
-      data: order,
-    });
-  });
+      res.status(StatusCodes.OK).json({
+        message: "Order cancelled successfully",
+        data: order,
+      });
+    },
+  );
   getRestaurantOrders = asyncHandler(
-    async (req: CustomRequest, res: Response) => {},
+    async (req: CustomRequest, res: Response) => {
+      const ownerId = this.getUserId(req);
+
+      const query: GetRestaurantOrdersQueryDto = {
+        status: req.query.status as OrderStatus | undefined,
+        page: Number(req.query.page),
+        limit: Number(req.query.limit),
+      };
+
+      const result = await this.orderService.getRestaurantOrders(
+        ownerId,
+        query,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Restaurant orders fetched successfully",
+        data: result.data,
+        pagination: result.pagination,
+      });
+    },
   );
   getRestaurantOrderDetails = asyncHandler(
-    async (req: CustomRequest, res: Response) => {},
+    async (req: CustomRequest, res: Response) => {
+      const ownerId = this.getUserId(req);
+      const orderId = Number(req.params.id);
+      const order = await this.orderService.getRestaurantOrderDetails(
+        ownerId,
+        orderId,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Restaurant order details fetched successfully",
+        data: order,
+      });
+    },
   );
   updateOrderStatus = asyncHandler(
     async (req: CustomRequest, res: Response) => {},

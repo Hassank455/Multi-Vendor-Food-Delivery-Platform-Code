@@ -5,8 +5,12 @@ import {
   CreateOrderItemInput,
   CustomerOrderDetailsDto,
   CustomerOrderListItemDto,
+  GetRestaurantOrdersQueryDto,
+  PaginatedRestaurantOrdersDto,
   PlaceOrderDto,
   PreparedOrderItem,
+  RestaurantOrderDetailsDto,
+  RestaurantOrderListItemDto,
 } from "./order.dto";
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/client";
 import { CartRepository } from "../cart/cart.repository";
@@ -304,5 +308,105 @@ export class OrderService {
         createdAt: transaction.createdAt,
       })),
     };
+  }
+
+  // ============== GET RESTAURANT ORDERS =====================
+  async getRestaurantOrders(
+    ownerId: number,
+    query: GetRestaurantOrdersQueryDto,
+  ): Promise<PaginatedRestaurantOrdersDto> {
+    const restaurant = await this.getRestaurantByOwnerIdOrThrow(ownerId);
+    const { orders, total } = await this.orderRepo.getRestaurantOrders(
+      restaurant.id,
+      query,
+    );
+    
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / query.limit);
+
+    return {
+      data: orders.map((order) => ({
+        id: order.id,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        totalPrice: Number(order.totalPrice),
+        createdAt: order.createdAt,
+        customer: {
+          id: order.customer?.id ?? 0,
+          name: order.customer?.name ?? "Unknown Customer",
+          phone: order.customer?.phone ?? "",
+        },
+        items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      })),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages,
+        hasNextPage: query.page < totalPages,
+        hasPreviousPage: query.page > 1,
+      },
+    };
+  }
+
+  // ============== GET RESTAURANT ORDER DETAILS =====================
+  async getRestaurantOrderDetails(
+    ownerId: number,
+    orderId: number,
+  ): Promise<RestaurantOrderDetailsDto> {
+    const restaurant = await this.getRestaurantByOwnerIdOrThrow(ownerId);
+    const order = await this.orderRepo.getRestaurantOrderDetails(
+      restaurant.id,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+    return {
+      id: order.id,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      totalPrice: Number(order.totalPrice),
+      createdAt: order.createdAt,
+      customer: {
+        id: order.customer?.id ?? 0,
+        name: order.customer?.name ?? "Unknown Customer",
+        phone: order.customer?.phone ?? "",
+        email: order.customer?.email ?? "",
+      },
+      customerAddress: {
+        id: order.customerAddress.id,
+        street: order.customerAddress.street,
+        city: order.customerAddress.city,
+        buildingNo: order.customerAddress.buildingNo ?? "",
+        postalCode: order.customerAddress.postalCode ?? "",
+        governorate: order.customerAddress.governorate,
+      },
+      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      transactions: order.transactions.map((transaction) => ({
+        id: transaction.id,
+        amount: Number(transaction.amount),
+        method: transaction.method,
+        details: transaction.details,
+        createdAt: transaction.createdAt,
+      })),
+    };
+  }
+
+  private async getRestaurantByOwnerIdOrThrow(
+    ownerId: number,
+    tx?: PrismaTransaction,
+  ) {
+    const restaurant = await this.orderRepo.findRestaurantByOwnerId(
+      ownerId,
+      tx,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found for this user");
+    }
+
+    return restaurant;
   }
 }

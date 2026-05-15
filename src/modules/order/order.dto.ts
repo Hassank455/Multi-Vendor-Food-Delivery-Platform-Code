@@ -81,3 +81,67 @@ export interface CustomerOrderDetailsDto {
     createdAt: Date;
   }[];
 }
+
+export interface RestaurantOrderListItemDto {
+  id: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  totalPrice: number;
+  createdAt: Date;
+  customer: {
+    id: number;
+    name: string;
+    phone: string;
+  };
+  items: PreparedOrderItem[];
+}
+
+export interface RestaurantOrderDetailsDto {
+  id: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  totalPrice: number;
+  createdAt: Date;
+  customer: {
+    id: number;
+    name: string;
+    phone: string;
+    email: string;
+  };
+  customerAddress: {
+    id: number;
+    street: string;
+    city: string;
+    buildingNo: string;
+    postalCode: string;
+    governorate: string;
+  };
+  items: PreparedOrderItem[];
+  transactions: {
+    id: number;
+    amount: number;
+    method: PaymentMethod;
+    details: string | null;
+    createdAt: Date;
+  }[];
+}
+
+export interface GetRestaurantOrdersQueryDto {
+  status?: OrderStatus;
+  page: number;
+  limit: number;
+}
+
+export interface PaginationMetaDto {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface PaginatedRestaurantOrdersDto {
+  data: RestaurantOrderListItemDto[];
+  pagination: PaginationMetaDto;
+}

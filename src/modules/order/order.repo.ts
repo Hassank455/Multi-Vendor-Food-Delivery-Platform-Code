@@ -4,7 +4,10 @@ import {
   type Prisma,
   type PaymentMethod,
 } from "../../generated/prisma/client";
-import type { CreateOrderItemInput } from "./order.dto";
+import type {
+  CreateOrderItemInput,
+  GetRestaurantOrdersQueryDto,
+} from "./order.dto";
 
 type PrismaTransaction = Prisma.TransactionClient;
 
@@ -190,6 +193,129 @@ export class OrderRepo {
       },
       data: {
         status: OrderStatus.CANCELLED,
+      },
+    });
+  }
+
+  async findRestaurantByOwnerId(ownerId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).restaurant.findFirst({
+      where: {
+        ownerId,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
+
+  async getRestaurantOrders(
+    restaurantId: number,
+    query: GetRestaurantOrdersQueryDto,
+    tx?: PrismaTransaction,
+  ) {
+    // this is mean always to filter by restaurantId and if status is provided then also filter by status
+    const where: Prisma.OrderWhereInput = {
+      restaurantId,
+      ...(query.status && { status: query.status }),
+    };
+    // for pagination we will use skip and take, skip is the number of items to skip and take is the number of items to take
+    const skip = (query.page - 1) * query.limit;
+
+    // count the total number of orders that match the where condition
+    const countQuery = this.db(tx).order.count({
+      where,
+    });
+    // then get the orders in the current page
+    const ordersQuery = this.db(tx).order.findMany({
+      where,
+      skip,
+      take: query.limit,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const [total, orders] = tx
+      ? await Promise.all([countQuery, ordersQuery])
+      : await prisma.$transaction([countQuery, ordersQuery]);
+
+    return {
+      total,
+      orders,
+    };
+  }
+
+  async getRestaurantOrderDetails(
+    restaurantId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.findFirst({
+      where: {
+        id: orderId,
+        restaurantId,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+        customerAddress: {
+          select: {
+            id: true,
+            street: true,
+            city: true,
+            buildingNo: true,
+            postalCode: true,
+            governorate: true,
+          },
+        },
+        items: {
+          include: {
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        transactions: {
+          select: {
+            id: true,
+            amount: true,
+            method: true,
+            details: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
       },
     });
   }

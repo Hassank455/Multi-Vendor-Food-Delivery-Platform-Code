@@ -10,6 +10,7 @@ import prisma from "../lib/prisma";
 
 import { CustomRequest } from "../common/tdos";
 import { AppErrorImpl } from "../errors/customApiError";
+import { Role } from "../generated/prisma/client";
 
 // Temporary development-only switch.
 // Remove this helper and its usages once real customer auth/login is ready.
@@ -49,6 +50,61 @@ const authenticateWithDevCustomerHeader = async (req: CustomRequest) => {
   req.customer = { id: customer.id };
 };
 
+// Temporary fallback for local development before JWT restaurant-owner login
+// exists. It injects req.user.id from x-user-id so restaurant controllers can
+// use the final auth contract during development without requiring real tokens.
+const authenticateWithDevUserHeader = async (req: CustomRequest) => {
+  const userIdHeader = req.get("x-user-id");
+
+  if (!userIdHeader) {
+    throw new UnAuthenticatedError("Please provide the authorization header");
+  }
+
+  const userId = Number(userIdHeader);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new BadRequestError("Invalid x-user-id header");
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      deletedAt: null,
+      role: Role.RESTAURANT_OWNER,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!user) {
+    throw new UnAuthenticatedError(
+      "Invalid development restaurant owner identity",
+    );
+  }
+
+  req.user = { id: user.id };
+};
+
+// Development-only auth fallback selector. We prefer x-user-id when present so
+// restaurant-owner endpoints can be tested the same way customer endpoints use
+// x-customer-id during local development.
+const authenticateWithDevHeaders = async (req: CustomRequest) => {
+  const userIdHeader = req.get("x-user-id");
+  const customerIdHeader = req.get("x-customer-id");
+
+  if (userIdHeader) {
+    await authenticateWithDevUserHeader(req);
+    return;
+  }
+
+  if (customerIdHeader) {
+    await authenticateWithDevCustomerHeader(req);
+    return;
+  }
+
+  throw new UnAuthenticatedError("Please provide the authorization header");
+};
+
 const authenticateRequest = async (req: CustomRequest) => {
   const authorization = req.get("authorization");
 
@@ -57,7 +113,7 @@ const authenticateRequest = async (req: CustomRequest) => {
     // If a Bearer token is provided but invalid, we fail fast instead of masking
     // the auth bug with the temporary development path.
     if (isDevHeaderAuthEnabled()) {
-      await authenticateWithDevCustomerHeader(req);
+      await authenticateWithDevHeaders(req);
       return;
     }
 
