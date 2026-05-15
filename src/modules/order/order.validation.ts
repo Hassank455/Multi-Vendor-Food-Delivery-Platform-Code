@@ -13,3 +13,9 @@ export const getCustomerOrderByIdSchema = z.object({
     id: z.coerce.number().int().positive(),
   }),
 });
+
+export const cancelOrderSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+});

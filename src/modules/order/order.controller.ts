@@ -56,4 +56,26 @@ export class OrderController {
       });
     },
   );
+
+  // cancel order, only if it's in PENDING and CONFIRMED status
+  cancelCustomerOrder = asyncHandler(async (req: CustomRequest, res: Response) => {
+    const customerId = this.getCustomerId(req);
+    const orderId = Number(req.params.id);
+
+    const order = await this.orderService.cancelCustomerOrder(customerId, orderId);
+
+    res.status(StatusCodes.OK).json({
+      message: "Order cancelled successfully",
+      data: order,
+    });
+  });
+  getRestaurantOrders = asyncHandler(
+    async (req: CustomRequest, res: Response) => {},
+  );
+  getRestaurantOrderDetails = asyncHandler(
+    async (req: CustomRequest, res: Response) => {},
+  );
+  updateOrderStatus = asyncHandler(
+    async (req: CustomRequest, res: Response) => {},
+  );
 }

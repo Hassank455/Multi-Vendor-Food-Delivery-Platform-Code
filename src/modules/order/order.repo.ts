@@ -1,5 +1,9 @@
 import prisma from "../../lib/prisma";
-import type { Prisma, PaymentMethod } from "../../generated/prisma/client";
+import {
+  OrderStatus,
+  type Prisma,
+  type PaymentMethod,
+} from "../../generated/prisma/client";
 import type { CreateOrderItemInput } from "./order.dto";
 
 type PrismaTransaction = Prisma.TransactionClient;
@@ -72,8 +76,8 @@ export class OrderRepo {
     });
   }
 
-  async getCustomerOrders(customerId: number) {
-    return await this.db().order.findMany({
+  async getCustomerOrders(customerId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).order.findMany({
       where: {
         customerId,
       },
@@ -101,8 +105,12 @@ export class OrderRepo {
     });
   }
 
-  async getCustomerOrderById(customerId: number, orderId: number) {
-    return await this.db().order.findFirst({
+  async getCustomerOrderById(
+    customerId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.findFirst({
       where: {
         id: orderId,
         customerId,
@@ -146,6 +154,42 @@ export class OrderRepo {
             createdAt: "desc",
           },
         },
+      },
+    });
+  }
+
+  async findCustomerOrderStatus(
+    customerId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.findFirst({
+      where: {
+        id: orderId,
+        customerId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
+  async cancelCustomerOrder(
+    customerId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.updateMany({
+      where: {
+        id: orderId,
+        customerId,
+        status: {
+          in: [OrderStatus.PENDING, OrderStatus.CONFIRMED],
+        },
+      },
+      data: {
+        status: OrderStatus.CANCELLED,
       },
     });
   }

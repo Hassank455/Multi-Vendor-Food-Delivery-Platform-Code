@@ -1,4 +1,4 @@
-import { NotFoundError, BadRequestError, ForbiddenError } from "../../errors";
+import { NotFoundError, BadRequestError } from "../../errors";
 import { OrderRepo } from "./order.repo";
 import {
   CartForCheckout,
@@ -8,7 +8,7 @@ import {
   PlaceOrderDto,
   PreparedOrderItem,
 } from "./order.dto";
-import { PaymentMethod } from "../../generated/prisma/client";
+import { PaymentMethod, OrderStatus } from "../../generated/prisma/client";
 import { CartRepository } from "../cart/cart.repository";
 import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
@@ -171,13 +171,14 @@ export class OrderService {
         id: order.restaurant.id,
         name: order.restaurant.name,
       },
-      items: order.items.map((item) => ({
-        menuItemId: item.menuItemId,
-        name: item.menuItem.name,
-        quantity: item.quantity,
-        unitPrice: Number(item.price),
-        totalPrice: item.quantity * Number(item.price),
-      })),
+      // items: order.items.map((item) => ({
+      //   menuItemId: item.menuItemId,
+      //   name: item.menuItem.name,
+      //   quantity: item.quantity,
+      //   unitPrice: Number(item.price),
+      //   totalPrice: item.quantity * Number(item.price),
+      // })),
+      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
     }));
   }
 
@@ -186,10 +187,92 @@ export class OrderService {
     customerId: number,
     orderId: number,
   ): Promise<CustomerOrderDetailsDto> {
-    const order = await this.orderRepo.getCustomerOrderById(
+    return await this.getCustomerOrderDetailsOrThrow(customerId, orderId);
+  }
+
+  // ============== CANCEL ORDER =====================
+  async cancelCustomerOrder(
+    customerId: number,
+    orderId: number,
+  ): Promise<CustomerOrderDetailsDto> {
+    const order = await this.orderRepo.findCustomerOrderStatus(
       customerId,
       orderId,
     );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    this.ensureCustomerCanCancelOrder(order.status);
+
+    // we use tx to These processes share a single logic and must succeed or fail as a single unit.
+    // If the order status update succeeds but fetching the updated order details fails, the customer would get an error response without the order being cancelled, which is not a good user experience.
+    return await prisma.$transaction(async (tx) => {
+      const result = await this.orderRepo.cancelCustomerOrder(
+        customerId,
+        orderId,
+        tx,
+      );
+
+      if (result.count === 0) {
+        throw new BadRequestError(
+          "Order status changed before cancellation. Please refresh and try again",
+        );
+      }
+
+      logger.info("Order cancelled", {
+        customerId,
+        orderId,
+      });
+
+      return await this.getCustomerOrderDetailsOrThrow(customerId, orderId, tx);
+    });
+  }
+
+  private mapPreparedOrderItem(item: {
+    menuItemId: number;
+    quantity: number;
+    price: number;
+    menuItem: {
+      name: string;
+    };
+  }): PreparedOrderItem {
+    return {
+      menuItemId: item.menuItemId,
+      name: item.menuItem.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.price),
+      totalPrice: item.quantity * Number(item.price),
+    };
+  }
+
+  private ensureCustomerCanCancelOrder(status: OrderStatus) {
+    if (status === OrderStatus.CANCELLED) {
+      throw new BadRequestError("Order is already cancelled");
+    }
+
+    if (status === OrderStatus.DELIVERED) {
+      throw new BadRequestError("Delivered order cannot be cancelled");
+    }
+
+    if (status !== OrderStatus.PENDING && status !== OrderStatus.CONFIRMED) {
+      throw new BadRequestError(
+        "Order cannot be cancelled after preparation has started",
+      );
+    }
+  }
+  private async getCustomerOrderDetailsOrThrow(
+    customerId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ): Promise<CustomerOrderDetailsDto> {
+    const order = await this.orderRepo.getCustomerOrderById(
+      customerId,
+      orderId,
+      tx,
+    );
+
     if (!order) {
       throw new NotFoundError("Order not found");
     }
@@ -212,13 +295,7 @@ export class OrderService {
         postalCode: order.customerAddress.postalCode ?? "",
         governorate: order.customerAddress.governorate,
       },
-      items: order.items.map((item) => ({
-        menuItemId: item.menuItemId,
-        name: item.menuItem.name,
-        quantity: item.quantity,
-        unitPrice: Number(item.price),
-        totalPrice: item.quantity * Number(item.price),
-      })),
+      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
       transactions: order.transactions.map((transaction) => ({
         id: transaction.id,
         amount: Number(transaction.amount),

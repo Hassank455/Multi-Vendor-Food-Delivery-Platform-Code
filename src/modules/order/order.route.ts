@@ -30,4 +30,11 @@ router.get(
   orderController.getCustomerOrderById,
 );
 
+router.patch(
+  "/:id/cancel",
+  isAuth,
+  validate(orderValidators.cancelOrderSchema),
+  orderController.cancelCustomerOrder,
+);
+
 export default router;
