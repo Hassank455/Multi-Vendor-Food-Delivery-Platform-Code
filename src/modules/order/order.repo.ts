@@ -319,4 +319,40 @@ export class OrderRepo {
       },
     });
   }
+
+  async findRestaurantOrderStatus(
+    restaurantId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.findFirst({
+      where: {
+        id: orderId,
+        restaurantId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
+  async updateRestaurantOrderStatus(
+    restaurantId: number,
+    orderId: number,
+    currentStatus: OrderStatus,
+    nextStatus: OrderStatus,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.updateMany({
+      where: {
+        id: orderId,
+        restaurantId,
+        status: currentStatus,
+      },
+      data: {
+        status: nextStatus,
+      },
+    });
+  }
 }

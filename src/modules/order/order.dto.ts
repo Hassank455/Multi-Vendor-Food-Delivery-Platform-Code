@@ -132,6 +132,10 @@ export interface GetRestaurantOrdersQueryDto {
   limit: number;
 }
 
+export interface UpdateRestaurantOrderStatusDto {
+  status: OrderStatus;
+}
+
 export interface PaginationMetaDto {
   page: number;
   limit: number;

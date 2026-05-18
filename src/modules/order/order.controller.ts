@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import { OrderService } from "./order.service";
 import asyncHandler from "../../utils/asyncHandler";
-import { GetRestaurantOrdersQueryDto, PlaceOrderDto } from "./order.dto";
+import {
+  GetRestaurantOrdersQueryDto,
+  PlaceOrderDto,
+  UpdateRestaurantOrderStatusDto,
+} from "./order.dto";
 import { StatusCodes } from "http-status-codes";
 import { CustomRequest } from "../../common/tdos";
 import { ForbiddenError } from "../../errors";
@@ -123,6 +127,23 @@ export class OrderController {
     },
   );
   updateOrderStatus = asyncHandler(
-    async (req: CustomRequest, res: Response) => {},
+    async (req: CustomRequest, res: Response) => {
+      const ownerId = this.getUserId(req);
+      const orderId = Number(req.params.id);
+      const dto: UpdateRestaurantOrderStatusDto = {
+        status: req.body.status,
+      };
+
+      const order = await this.orderService.updateOrderStatus(
+        ownerId,
+        orderId,
+        dto,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Order status updated successfully",
+        data: order,
+      });
+    },
   );
 }

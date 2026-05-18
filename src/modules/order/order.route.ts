@@ -35,6 +35,12 @@ router.get(
   validate(orderValidators.getRestaurantOrderDetailsSchema),
   orderController.getRestaurantOrderDetails,
 );
+router.patch(
+  "/restaurant/:id/status",
+  isAuth,
+  validate(orderValidators.updateRestaurantOrderStatusSchema),
+  orderController.updateOrderStatus,
+);
 
 router.get(
   "/:id",

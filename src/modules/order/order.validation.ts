@@ -26,6 +26,15 @@ export const getRestaurantOrderDetailsSchema = z.object({
   }),
 });
 
+export const updateRestaurantOrderStatusSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    status: z.nativeEnum(OrderStatus),
+  }),
+});
+
 export const getRestaurantOrdersSchema = z.object({
   query: z.object({
     status: z.nativeEnum(OrderStatus).optional(),

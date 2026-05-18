@@ -11,6 +11,7 @@ import {
   PreparedOrderItem,
   RestaurantOrderDetailsDto,
   RestaurantOrderListItemDto,
+  UpdateRestaurantOrderStatusDto,
 } from "./order.dto";
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/client";
 import { CartRepository } from "../cart/cart.repository";
@@ -394,6 +395,87 @@ export class OrderService {
     };
   }
 
+  async updateOrderStatus(
+    ownerId: number,
+    orderId: number,
+    dto: UpdateRestaurantOrderStatusDto,
+  ): Promise<RestaurantOrderDetailsDto> {
+    const restaurant = await this.getRestaurantByOwnerIdOrThrow(ownerId);
+    const order = await this.orderRepo.findRestaurantOrderStatus(
+      restaurant.id,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    this.ensureRestaurantCanUpdateOrderStatus(order.status, dto.status);
+
+    return await prisma.$transaction(async (tx) => {
+      const result = await this.orderRepo.updateRestaurantOrderStatus(
+        restaurant.id,
+        orderId,
+        order.status,
+        dto.status,
+        tx,
+      );
+
+      if (result.count === 0) {
+        throw new BadRequestError(
+          "Order status changed before update. Please refresh and try again",
+        );
+      }
+
+      logger.info("Order status updated", {
+        ownerId,
+        orderId,
+        fromStatus: order.status,
+        toStatus: dto.status,
+      });
+
+      const updatedOrder = await this.orderRepo.getRestaurantOrderDetails(
+        restaurant.id,
+        orderId,
+        tx,
+      );
+
+      if (!updatedOrder) {
+        throw new NotFoundError("Order not found");
+      }
+
+      return {
+        id: updatedOrder.id,
+        status: updatedOrder.status,
+        paymentMethod: updatedOrder.paymentMethod,
+        totalPrice: Number(updatedOrder.totalPrice),
+        createdAt: updatedOrder.createdAt,
+        customer: {
+          id: updatedOrder.customer?.id ?? 0,
+          name: updatedOrder.customer?.name ?? "Unknown Customer",
+          phone: updatedOrder.customer?.phone ?? "",
+          email: updatedOrder.customer?.email ?? "",
+        },
+        customerAddress: {
+          id: updatedOrder.customerAddress.id,
+          street: updatedOrder.customerAddress.street,
+          city: updatedOrder.customerAddress.city,
+          buildingNo: updatedOrder.customerAddress.buildingNo ?? "",
+          postalCode: updatedOrder.customerAddress.postalCode ?? "",
+          governorate: updatedOrder.customerAddress.governorate,
+        },
+        items: updatedOrder.items.map((item) => this.mapPreparedOrderItem(item)),
+        transactions: updatedOrder.transactions.map((transaction) => ({
+          id: transaction.id,
+          amount: Number(transaction.amount),
+          method: transaction.method,
+          details: transaction.details,
+          createdAt: transaction.createdAt,
+        })),
+      };
+    });
+  }
+
   private async getRestaurantByOwnerIdOrThrow(
     ownerId: number,
     tx?: PrismaTransaction,
@@ -408,5 +490,39 @@ export class OrderService {
     }
 
     return restaurant;
+  }
+
+  private ensureRestaurantCanUpdateOrderStatus(
+    currentStatus: OrderStatus,
+    nextStatus: OrderStatus,
+  ) {
+    if (currentStatus === nextStatus) {
+      throw new BadRequestError("Order is already in this status");
+    }
+
+    if (currentStatus === OrderStatus.CANCELLED) {
+      throw new BadRequestError("Cancelled order cannot be updated");
+    }
+
+    if (currentStatus === OrderStatus.DELIVERED) {
+      throw new BadRequestError("Delivered order cannot be updated");
+    }
+
+    const allowedNextStatuses: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [
+        OrderStatus.PREPARING,
+        OrderStatus.CANCELLED,
+      ],
+      [OrderStatus.PREPARING]: [OrderStatus.OUT_FOR_DELIVERY],
+      [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+    };
+
+    const validNextStatuses = allowedNextStatuses[currentStatus] ?? [];
+    if (!validNextStatuses.includes(nextStatus)) {
+      throw new BadRequestError(
+        `Cannot update order status from ${currentStatus} to ${nextStatus}`,
+      );
+    }
   }
 }
