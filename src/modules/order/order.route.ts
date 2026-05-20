@@ -17,8 +17,43 @@ const orderController = new OrderController(orderService);
 
 router.post(
   "/",
+  isAuth,
   validate(orderValidators.placeOrderSchema),
   orderController.placeOrder,
+);
+
+router.get("/", isAuth, orderController.getCustomerOrders);
+router.get(
+  "/restaurant",
+  isAuth,
+  validate(orderValidators.getRestaurantOrdersSchema),
+  orderController.getRestaurantOrders,
+); // TODO: here we can also add filters like status and date range etc.
+router.get(
+  "/restaurant/:id",
+  isAuth,
+  validate(orderValidators.getRestaurantOrderDetailsSchema),
+  orderController.getRestaurantOrderDetails,
+);
+router.patch(
+  "/restaurant/:id/status",
+  isAuth,
+  validate(orderValidators.updateRestaurantOrderStatusSchema),
+  orderController.updateOrderStatus,
+);
+
+router.get(
+  "/:id",
+  isAuth,
+  validate(orderValidators.getCustomerOrderByIdSchema),
+  orderController.getCustomerOrderById,
+);
+
+router.patch(
+  "/:id/cancel",
+  isAuth,
+  validate(orderValidators.cancelOrderSchema),
+  orderController.cancelCustomerOrder,
 );
 
 export default router;

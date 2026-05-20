@@ -1,18 +1,24 @@
-import { NotFoundError, BadRequestError, ForbiddenError } from "../../errors";
+import { NotFoundError, BadRequestError } from "../../errors";
 import { OrderRepo } from "./order.repo";
 import {
   CartForCheckout,
   CreateOrderItemInput,
+  CustomerOrderDetailsDto,
+  CustomerOrderListItemDto,
+  GetRestaurantOrdersQueryDto,
+  PaginatedRestaurantOrdersDto,
   PlaceOrderDto,
   PreparedOrderItem,
+  RestaurantOrderDetailsDto,
+  RestaurantOrderListItemDto,
+  UpdateRestaurantOrderStatusDto,
 } from "./order.dto";
-import { PaymentMethod } from "../../generated/prisma/client";
+import { PaymentMethod, OrderStatus } from "../../generated/prisma/client";
 import { CartRepository } from "../cart/cart.repository";
 import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
 import type { Prisma } from "../../generated/prisma/client";
 import { CustomerAddressRepo } from "../customer_address/customer_address.repo";
-
 const logger = new LoggerService("order");
 type PrismaTransaction = Prisma.TransactionClient;
 export class OrderService {
@@ -23,12 +29,12 @@ export class OrderService {
   ) {}
 
   // ============== PLACE ORDER =====================
-  async placeOrder(dto: PlaceOrderDto) {
+  async placeOrder(customerId: number, dto: PlaceOrderDto) {
     const order = await prisma.$transaction(async (tx) => {
       //TODO: Lock Cart
 
       const cart = (await this.cartRepo.getCartDetails(
-        dto.customerId,
+        customerId,
         tx,
       )) as CartForCheckout | null;
       logger.info("Cart ", { cart });
@@ -42,7 +48,7 @@ export class OrderService {
       const restaurantId = cart.restaurantId;
 
       await this.validateCustomerAddressOwnership(
-        dto.customerId,
+        customerId,
         dto.customerAddressId,
         tx,
       );
@@ -57,7 +63,7 @@ export class OrderService {
       }));
 
       const createdOrder = await this.orderRepo.createOrder(
-        dto.customerId,
+        customerId,
         dto.customerAddressId,
         restaurantId,
         dto.paymentMethod,
@@ -153,5 +159,370 @@ export class OrderService {
       unitPrice: item.price,
       totalPrice: item.quantity * item.price,
     }));
+  }
+
+  // ============== GET CUSTOMER ORDERS =====================
+  async getCustomerOrders(
+    customerId: number,
+  ): Promise<CustomerOrderListItemDto[]> {
+    const orders = await this.orderRepo.getCustomerOrders(customerId);
+    return orders.map((order) => ({
+      id: order.id,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      totalPrice: Number(order.totalPrice),
+      createdAt: order.createdAt,
+      restaurant: {
+        id: order.restaurant.id,
+        name: order.restaurant.name,
+      },
+      // items: order.items.map((item) => ({
+      //   menuItemId: item.menuItemId,
+      //   name: item.menuItem.name,
+      //   quantity: item.quantity,
+      //   unitPrice: Number(item.price),
+      //   totalPrice: item.quantity * Number(item.price),
+      // })),
+      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+    }));
+  }
+
+  // ============== GET CUSTOMER ORDER BY ID =====================
+  async getCustomerOrderById(
+    customerId: number,
+    orderId: number,
+  ): Promise<CustomerOrderDetailsDto> {
+    return await this.getCustomerOrderDetailsOrThrow(customerId, orderId);
+  }
+
+  // ============== CANCEL ORDER =====================
+  async cancelCustomerOrder(
+    customerId: number,
+    orderId: number,
+  ): Promise<CustomerOrderDetailsDto> {
+    const order = await this.orderRepo.findCustomerOrderStatus(
+      customerId,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    this.ensureCustomerCanCancelOrder(order.status);
+
+    // we use tx to These processes share a single logic and must succeed or fail as a single unit.
+    // If the order status update succeeds but fetching the updated order details fails, the customer would get an error response without the order being cancelled, which is not a good user experience.
+    return await prisma.$transaction(async (tx) => {
+      const result = await this.orderRepo.cancelCustomerOrder(
+        customerId,
+        orderId,
+        tx,
+      );
+
+      if (result.count === 0) {
+        throw new BadRequestError(
+          "Order status changed before cancellation. Please refresh and try again",
+        );
+      }
+
+      logger.info("Order cancelled", {
+        customerId,
+        orderId,
+      });
+
+      return await this.getCustomerOrderDetailsOrThrow(customerId, orderId, tx);
+    });
+  }
+
+  private mapPreparedOrderItem(item: {
+    menuItemId: number;
+    quantity: number;
+    price: number;
+    menuItem: {
+      name: string;
+    };
+  }): PreparedOrderItem {
+    return {
+      menuItemId: item.menuItemId,
+      name: item.menuItem.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.price),
+      totalPrice: item.quantity * Number(item.price),
+    };
+  }
+
+  private ensureCustomerCanCancelOrder(status: OrderStatus) {
+    if (status === OrderStatus.CANCELLED) {
+      throw new BadRequestError("Order is already cancelled");
+    }
+
+    if (status === OrderStatus.DELIVERED) {
+      throw new BadRequestError("Delivered order cannot be cancelled");
+    }
+
+    if (status !== OrderStatus.PENDING && status !== OrderStatus.CONFIRMED) {
+      throw new BadRequestError(
+        "Order cannot be cancelled after preparation has started",
+      );
+    }
+  }
+  private async getCustomerOrderDetailsOrThrow(
+    customerId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ): Promise<CustomerOrderDetailsDto> {
+    const order = await this.orderRepo.getCustomerOrderById(
+      customerId,
+      orderId,
+      tx,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    return {
+      id: order.id,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      totalPrice: Number(order.totalPrice),
+      createdAt: order.createdAt,
+      restaurant: {
+        id: order.restaurant.id,
+        name: order.restaurant.name,
+      },
+      customerAddress: {
+        id: order.customerAddress.id,
+        street: order.customerAddress.street,
+        city: order.customerAddress.city,
+        buildingNo: order.customerAddress.buildingNo ?? "",
+        postalCode: order.customerAddress.postalCode ?? "",
+        governorate: order.customerAddress.governorate,
+      },
+      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      transactions: order.transactions.map((transaction) => ({
+        id: transaction.id,
+        amount: Number(transaction.amount),
+        method: transaction.method,
+        details: transaction.details,
+        createdAt: transaction.createdAt,
+      })),
+    };
+  }
+
+  // ============== GET RESTAURANT ORDERS =====================
+  async getRestaurantOrders(
+    ownerId: number,
+    query: GetRestaurantOrdersQueryDto,
+  ): Promise<PaginatedRestaurantOrdersDto> {
+    const restaurant = await this.getRestaurantByOwnerIdOrThrow(ownerId);
+    const { orders, total } = await this.orderRepo.getRestaurantOrders(
+      restaurant.id,
+      query,
+    );
+    
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / query.limit);
+
+    return {
+      data: orders.map((order) => ({
+        id: order.id,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        totalPrice: Number(order.totalPrice),
+        createdAt: order.createdAt,
+        customer: {
+          id: order.customer?.id ?? 0,
+          name: order.customer?.name ?? "Unknown Customer",
+          phone: order.customer?.phone ?? "",
+        },
+        items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      })),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages,
+        hasNextPage: query.page < totalPages,
+        hasPreviousPage: query.page > 1,
+      },
+    };
+  }
+
+  // ============== GET RESTAURANT ORDER DETAILS =====================
+  async getRestaurantOrderDetails(
+    ownerId: number,
+    orderId: number,
+  ): Promise<RestaurantOrderDetailsDto> {
+    const restaurant = await this.getRestaurantByOwnerIdOrThrow(ownerId);
+    const order = await this.orderRepo.getRestaurantOrderDetails(
+      restaurant.id,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+    return {
+      id: order.id,
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+      totalPrice: Number(order.totalPrice),
+      createdAt: order.createdAt,
+      customer: {
+        id: order.customer?.id ?? 0,
+        name: order.customer?.name ?? "Unknown Customer",
+        phone: order.customer?.phone ?? "",
+        email: order.customer?.email ?? "",
+      },
+      customerAddress: {
+        id: order.customerAddress.id,
+        street: order.customerAddress.street,
+        city: order.customerAddress.city,
+        buildingNo: order.customerAddress.buildingNo ?? "",
+        postalCode: order.customerAddress.postalCode ?? "",
+        governorate: order.customerAddress.governorate,
+      },
+      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      transactions: order.transactions.map((transaction) => ({
+        id: transaction.id,
+        amount: Number(transaction.amount),
+        method: transaction.method,
+        details: transaction.details,
+        createdAt: transaction.createdAt,
+      })),
+    };
+  }
+
+  async updateOrderStatus(
+    ownerId: number,
+    orderId: number,
+    dto: UpdateRestaurantOrderStatusDto,
+  ): Promise<RestaurantOrderDetailsDto> {
+    const restaurant = await this.getRestaurantByOwnerIdOrThrow(ownerId);
+    const order = await this.orderRepo.findRestaurantOrderStatus(
+      restaurant.id,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    this.ensureRestaurantCanUpdateOrderStatus(order.status, dto.status);
+
+    return await prisma.$transaction(async (tx) => {
+      const result = await this.orderRepo.updateRestaurantOrderStatus(
+        restaurant.id,
+        orderId,
+        order.status,
+        dto.status,
+        tx,
+      );
+
+      if (result.count === 0) {
+        throw new BadRequestError(
+          "Order status changed before update. Please refresh and try again",
+        );
+      }
+
+      logger.info("Order status updated", {
+        ownerId,
+        orderId,
+        fromStatus: order.status,
+        toStatus: dto.status,
+      });
+
+      const updatedOrder = await this.orderRepo.getRestaurantOrderDetails(
+        restaurant.id,
+        orderId,
+        tx,
+      );
+
+      if (!updatedOrder) {
+        throw new NotFoundError("Order not found");
+      }
+
+      return {
+        id: updatedOrder.id,
+        status: updatedOrder.status,
+        paymentMethod: updatedOrder.paymentMethod,
+        totalPrice: Number(updatedOrder.totalPrice),
+        createdAt: updatedOrder.createdAt,
+        customer: {
+          id: updatedOrder.customer?.id ?? 0,
+          name: updatedOrder.customer?.name ?? "Unknown Customer",
+          phone: updatedOrder.customer?.phone ?? "",
+          email: updatedOrder.customer?.email ?? "",
+        },
+        customerAddress: {
+          id: updatedOrder.customerAddress.id,
+          street: updatedOrder.customerAddress.street,
+          city: updatedOrder.customerAddress.city,
+          buildingNo: updatedOrder.customerAddress.buildingNo ?? "",
+          postalCode: updatedOrder.customerAddress.postalCode ?? "",
+          governorate: updatedOrder.customerAddress.governorate,
+        },
+        items: updatedOrder.items.map((item) => this.mapPreparedOrderItem(item)),
+        transactions: updatedOrder.transactions.map((transaction) => ({
+          id: transaction.id,
+          amount: Number(transaction.amount),
+          method: transaction.method,
+          details: transaction.details,
+          createdAt: transaction.createdAt,
+        })),
+      };
+    });
+  }
+
+  private async getRestaurantByOwnerIdOrThrow(
+    ownerId: number,
+    tx?: PrismaTransaction,
+  ) {
+    const restaurant = await this.orderRepo.findRestaurantByOwnerId(
+      ownerId,
+      tx,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found for this user");
+    }
+
+    return restaurant;
+  }
+
+  private ensureRestaurantCanUpdateOrderStatus(
+    currentStatus: OrderStatus,
+    nextStatus: OrderStatus,
+  ) {
+    if (currentStatus === nextStatus) {
+      throw new BadRequestError("Order is already in this status");
+    }
+
+    if (currentStatus === OrderStatus.CANCELLED) {
+      throw new BadRequestError("Cancelled order cannot be updated");
+    }
+
+    if (currentStatus === OrderStatus.DELIVERED) {
+      throw new BadRequestError("Delivered order cannot be updated");
+    }
+
+    const allowedNextStatuses: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.CONFIRMED]: [
+        OrderStatus.PREPARING,
+        OrderStatus.CANCELLED,
+      ],
+      [OrderStatus.PREPARING]: [OrderStatus.OUT_FOR_DELIVERY],
+      [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+    };
+
+    const validNextStatuses = allowedNextStatuses[currentStatus] ?? [];
+    if (!validNextStatuses.includes(nextStatus)) {
+      throw new BadRequestError(
+        `Cannot update order status from ${currentStatus} to ${nextStatus}`,
+      );
+    }
   }
 }
