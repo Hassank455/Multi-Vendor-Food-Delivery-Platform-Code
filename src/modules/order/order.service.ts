@@ -19,6 +19,7 @@ import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
 import type { Prisma } from "../../generated/prisma/client";
 import { CustomerAddressRepo } from "../customer_address/customer_address.repo";
+import { buildPaginationMeta } from "../../common/pagination";
 const logger = new LoggerService("order");
 type PrismaTransaction = Prisma.TransactionClient;
 export class OrderService {
@@ -321,9 +322,6 @@ export class OrderService {
       restaurant.id,
       query,
     );
-    
-
-    const totalPages = total === 0 ? 0 : Math.ceil(total / query.limit);
 
     return {
       data: orders.map((order) => ({
@@ -339,14 +337,7 @@ export class OrderService {
         },
         items: order.items.map((item) => this.mapPreparedOrderItem(item)),
       })),
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages,
-        hasNextPage: query.page < totalPages,
-        hasPreviousPage: query.page > 1,
-      },
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 

@@ -1,4 +1,8 @@
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/enums";
+import {
+  PaginationMetaDto,
+  PaginationQueryDto,
+} from "../../common/pagination";
 
 export interface PlaceOrderDto {
   customerAddressId: number;
@@ -126,23 +130,12 @@ export interface RestaurantOrderDetailsDto {
   }[];
 }
 
-export interface GetRestaurantOrdersQueryDto {
+export interface GetRestaurantOrdersQueryDto extends PaginationQueryDto {
   status?: OrderStatus;
-  page: number;
-  limit: number;
 }
 
 export interface UpdateRestaurantOrderStatusDto {
   status: OrderStatus;
-}
-
-export interface PaginationMetaDto {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
 export interface PaginatedRestaurantOrdersDto {
