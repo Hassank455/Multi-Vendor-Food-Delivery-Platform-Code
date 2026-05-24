@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { paginationQuerySchema } from "../../common/pagination";
+import { PaymentMethod } from "../../generated/prisma/enums";
 
 const requiredText = (max: number) => z.string().trim().min(1).max(max);
 
@@ -53,19 +54,21 @@ export const getCustomerReviewsSchema = z.object({
   query: paginationQuerySchema.strict(),
 });
 
-// export const getPaymentPreferenceSchema = z.object({
-//   body: z.object({}),
-//   query: z.object({}),
-//   params: z.object({}),
-// });
+export const getPaymentPreferenceSchema = z.object({
+  body: z.object({}).strict(),
+  query: z.object({}).strict(),
+  params: z.object({}).strict(),
+});
 
-// export const upsertPaymentPreferenceSchema = z.object({
-//   params: z.object({}),
-//   query: z.object({}),
-//   body: z.object({
-//     method: z.nativeEnum(PaymentMethod),
-//   }),
-// });
+export const upsertPaymentPreferenceSchema = z.object({
+  params: z.object({}).strict(),
+  query: z.object({}).strict(),
+  body: z
+    .object({
+      method: z.nativeEnum(PaymentMethod),
+    })
+    .strict(),
+});
 
 // export const deactivateMyAccountSchema = z.object({
 //   body: z.object({}),

@@ -6,6 +6,8 @@ import {
   CreateCustomerReviewDto,
   GetCustomerReviewsQueryDto,
   PaginatedCustomerReviewsDto,
+  PaymentPreferenceDto,
+  UpsertPaymentPreferenceDto,
 } from "./customer.dto";
 import { CustomerRepo } from "./customer.repo";
 
@@ -80,14 +82,33 @@ export class CustomerService {
     return deactivated;
   }
 
-  // async getPaymentPreference(customerId: number) {
-  //   return await this.customerRepo.getPaymentPreference(customerId);
-  // }
+  async getPaymentPreference(customerId: number): Promise<PaymentPreferenceDto> {
+    const customer = await this.customerRepo.getPaymentPreference(customerId);
 
-  // async upsertPaymentPreference(
-  //   customerId: number,
-  //   dto: UpsertPaymentPreferenceDto,
-  // ) {
-  //   return await this.customerRepo.upsertPaymentPreference(customerId, dto);
-  // }
+    if (!customer) {
+      throw new NotFoundError("Customer not found");
+    }
+
+    return {
+      method: customer.paymentPreference,
+    };
+  }
+
+  async upsertPaymentPreference(
+    customerId: number,
+    dto: UpsertPaymentPreferenceDto,
+  ): Promise<PaymentPreferenceDto> {
+    const customer = await this.customerRepo.upsertPaymentPreference(
+      customerId,
+      dto,
+    );
+
+    if (!customer) {
+      throw new NotFoundError("Customer not found");
+    }
+
+    return {
+      method: customer.paymentPreference,
+    };
+  }
 }

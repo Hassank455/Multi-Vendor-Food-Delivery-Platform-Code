@@ -8,6 +8,7 @@ import {
   UpdateCustomerProfileDto,
   CreateCustomerReviewDto,
   GetCustomerReviewsQueryDto,
+  UpsertPaymentPreferenceDto,
 } from "./customer.dto";
 
 export class CustomerController {
@@ -88,7 +89,7 @@ export class CustomerController {
   deactivateMyAccount = asyncHandler(
     async (req: CustomRequest, res: Response) => {
       const customerId = this.getCustomerId(req);
-      
+
       await this.customerService.deactivateMyAccount(customerId);
 
       res.status(StatusCodes.OK).json({
@@ -97,15 +98,30 @@ export class CustomerController {
     },
   );
 
-  // getPaymentPreference = asyncHandler(
-  //   async (req: CustomRequest, res: Response) => {
-  //     this.getCustomerId(req);
-  //   },
-  // );
+  getPaymentPreference = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const customerId = this.getCustomerId(req);
+      const paymentPreference =
+        await this.customerService.getPaymentPreference(customerId);
 
-  // upsertPaymentPreference = asyncHandler(
-  //   async (req: CustomRequest, res: Response) => {
-  //     this.getCustomerId(req);
-  //   },
-  // );
+      res.status(StatusCodes.OK).json({
+        message: "Customer payment preference fetched successfully",
+        data: paymentPreference,
+      });
+    },
+  );
+
+  upsertPaymentPreference = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const customerId = this.getCustomerId(req);
+      const dto: UpsertPaymentPreferenceDto = req.body;
+      const paymentPreference =
+        await this.customerService.upsertPaymentPreference(customerId, dto);
+
+      res.status(StatusCodes.OK).json({
+        message: "Customer payment preference updated successfully",
+        data: paymentPreference,
+      });
+    },
+  );
 }

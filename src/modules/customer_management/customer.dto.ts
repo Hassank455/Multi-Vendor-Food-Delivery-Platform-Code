@@ -1,4 +1,5 @@
 import { PaginationMetaDto, PaginationQueryDto } from "../../common/pagination";
+import { PaymentMethod } from "../../generated/prisma/enums";
 
 export interface UpdateCustomerProfileDto {
   name?: string;
@@ -28,4 +29,12 @@ export interface CustomerReviewListItemDto {
 export interface PaginatedCustomerReviewsDto {
   data: CustomerReviewListItemDto[];
   pagination: PaginationMetaDto;
+}
+
+export interface PaymentPreferenceDto {
+  method: PaymentMethod | null;
+}
+
+export interface UpsertPaymentPreferenceDto {
+  method: PaymentMethod;
 }

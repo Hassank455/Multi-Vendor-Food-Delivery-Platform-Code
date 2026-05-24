@@ -4,6 +4,7 @@ import {
   UpdateCustomerProfileDto,
   CreateCustomerReviewDto,
   GetCustomerReviewsQueryDto,
+  UpsertPaymentPreferenceDto,
 } from "./customer.dto";
 
 export class CustomerRepo {
@@ -137,11 +138,36 @@ export class CustomerRepo {
     return result.count > 0;
   }
 
-  // async getPaymentPreference(customerId: number, tx?: PrismaTransaction) {}
+  async getPaymentPreference(customerId: number) {
+    return await prisma.customer.findFirst({
+      where: {
+        id: customerId,
+        deletedAt: null,
+      },
+      select: {
+        paymentPreference: true,
+      },
+    });
+  }
 
-  // async upsertPaymentPreference(
-  //   customerId: number,
-  //   dto: UpsertPaymentPreferenceDto,
-  //   tx?: PrismaTransaction,
-  // ) {}
+  async upsertPaymentPreference(
+    customerId: number,
+    dto: UpsertPaymentPreferenceDto,
+  ) {
+    const result = await prisma.customer.updateMany({
+      where: {
+        id: customerId,
+        deletedAt: null,
+      },
+      data: {
+        paymentPreference: dto.method,
+      },
+    });
+
+    if (!result.count) {
+      return null;
+    }
+
+    return await this.getPaymentPreference(customerId);
+  }
 }

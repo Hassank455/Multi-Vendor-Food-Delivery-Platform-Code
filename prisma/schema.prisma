@@ -27,6 +27,7 @@ model Customer {
   email     String    @unique
   phone     String
   password  String
+  paymentPreference PaymentMethod?
   createdAt DateTime  @default(now())
   deletedAt DateTime?
 

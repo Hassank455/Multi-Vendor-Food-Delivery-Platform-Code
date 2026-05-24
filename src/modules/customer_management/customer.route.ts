@@ -40,18 +40,18 @@ router.patch(
   customerController.deactivateMyAccount,
 );
 
-// router.get(
-//   "/me/payment-preference",
-//   isAuth,
-//   validate(customerValidators.getPaymentPreferenceSchema),
-//   customerController.getPaymentPreference,
-// );
+router.get(
+  "/me/payment-preference",
+  isAuth,
+  validate(customerValidators.getPaymentPreferenceSchema),
+  customerController.getPaymentPreference,
+);
 
-// router.put(
-//   "/me/payment-preference",
-//   isAuth,
-//   validate(customerValidators.upsertPaymentPreferenceSchema),
-//   customerController.upsertPaymentPreference,
-// );
+router.put(
+  "/me/payment-preference",
+  isAuth,
+  validate(customerValidators.upsertPaymentPreferenceSchema),
+  customerController.upsertPaymentPreference,
+);
 
 export default router;
