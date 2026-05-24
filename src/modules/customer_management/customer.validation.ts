@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { PaymentMethod } from "../../generated/prisma/enums";
+import { paginationQuerySchema } from "../../common/pagination";
 
 const requiredText = (max: number) => z.string().trim().min(1).max(max);
 
@@ -15,12 +15,6 @@ const optionalNullableText = (max: number) =>
 
     return value;
   }, z.string().trim().max(max).nullable().optional());
-
-export const getProfileSchema = z.object({
-  body: z.object({}),
-  query: z.object({}),
-  params: z.object({}),
-});
 
 export const updateProfileSchema = z.object({
   params: z.object({}),
@@ -52,11 +46,12 @@ export const createCustomerReviewSchema = z.object({
   }),
 });
 
-// export const getCustomerReviewsSchema = z.object({
-//   body: z.object({}),
-//   query: z.object({}),
-//   params: z.object({}),
-// });
+export const getCustomerReviewsSchema = z.object({
+  body: z.object({}).strict(),
+  params: z.object({}).strict(),
+  // strict() is used to ensure that no extra query parameters are allowed, otherwise if we have an extra query parameter, it will be ignored and the validation will pass, which is not what we want
+  query: paginationQuerySchema.strict(),
+});
 
 // export const getPaymentPreferenceSchema = z.object({
 //   body: z.object({}),

@@ -1,18 +1,12 @@
-import { date } from "zod/v4";
 import prisma from "../../lib/prisma";
-// import type { Prisma } from "../../generated/prisma/client";
+
 import {
   UpdateCustomerProfileDto,
   CreateCustomerReviewDto,
+  GetCustomerReviewsQueryDto,
 } from "./customer.dto";
 
-// type PrismaTransaction = Prisma.TransactionClient;
-
 export class CustomerRepo {
-  // protected db(tx?: PrismaTransaction) {
-  //   return tx ?? prisma;
-  // }
-
   async getCustomerProfileById(customerId: number) {
     return await prisma.customer.findFirst({
       where: { id: customerId, deletedAt: null },
@@ -91,8 +85,17 @@ export class CustomerRepo {
     });
   }
 
-  async getCustomerReviews(customerId: number) {
-    return await prisma.review.findMany({
+  async getCustomerReviews(
+    customerId: number,
+    query: GetCustomerReviewsQueryDto,
+  ) {
+    const skip = (query.page - 1) * query.limit;
+    const countQuery = prisma.review.count({
+      where: {
+        customerId,
+      },
+    });
+    const reviewsQuery = prisma.review.findMany({
       where: {
         customerId,
       },
@@ -111,7 +114,27 @@ export class CustomerRepo {
       orderBy: {
         id: "desc",
       },
+      skip,
+      take: query.limit,
     });
+    const [total, reviews] = await prisma.$transaction([
+      countQuery,
+      reviewsQuery,
+    ]);
+
+    return {
+      total,
+      reviews,
+    };
+  }
+  async deactivateMyAccount(customerId: number) {
+    const result = await prisma.customer.updateMany({
+      where: { id: customerId, deletedAt: null },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+    return result.count > 0;
   }
 
   // async getPaymentPreference(customerId: number, tx?: PrismaTransaction) {}
@@ -121,6 +144,4 @@ export class CustomerRepo {
   //   dto: UpsertPaymentPreferenceDto,
   //   tx?: PrismaTransaction,
   // ) {}
-
-  // async deactivateMyAccount(customerId: number, tx?: PrismaTransaction) {}
 }

@@ -30,7 +30,14 @@ router.post(
 router.get(
   "/me/reviews",
   isAuth,
+  validate(customerValidators.getCustomerReviewsSchema),
   customerController.getCustomerReviews,
+);
+
+router.patch(
+  "/me/deactivate",
+  isAuth,
+  customerController.deactivateMyAccount,
 );
 
 // router.get(
@@ -45,13 +52,6 @@ router.get(
 //   isAuth,
 //   validate(customerValidators.upsertPaymentPreferenceSchema),
 //   customerController.upsertPaymentPreference,
-// );
-
-// router.patch(
-//   "/me/deactivate",
-//   isAuth,
-//   validate(customerValidators.deactivateMyAccountSchema),
-//   customerController.deactivateMyAccount,
 // );
 
 export default router;

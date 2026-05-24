@@ -18,19 +18,12 @@ const isDevHeaderAuthEnabled = () =>
   process.env.ENABLE_DEV_AUTH_HEADER === "true" &&
   process.env.NODE_ENV !== "production";
 
-// Temporary fallback for local development before JWT customer login exists.
-// It injects req.customer.id from x-customer-id so controllers can keep using
-// the final contract without bringing customerId back into request bodies.
-const authenticateWithDevCustomerHeader = async (req: CustomRequest) => {
-  const customerIdHeader = req.get("x-customer-id");
-
-  if (!customerIdHeader) {
-    throw new UnAuthenticatedError("Please provide the authorization header");
-  }
-
-  const customerId = Number(customerIdHeader);
+const authenticateActiveCustomerById = async (
+  customerId: number,
+  req: CustomRequest,
+) => {
   if (!Number.isInteger(customerId) || customerId <= 0) {
-    throw new BadRequestError("Invalid x-customer-id header");
+    throw new BadRequestError("Invalid customer identity");
   }
 
   const customer = await prisma.customer.findFirst({
@@ -44,25 +37,18 @@ const authenticateWithDevCustomerHeader = async (req: CustomRequest) => {
   });
 
   if (!customer) {
-    throw new UnAuthenticatedError("Invalid development customer identity");
+    throw new UnAuthenticatedError("Invalid or deactivated customer account");
   }
 
   req.customer = { id: customer.id };
 };
 
-// Temporary fallback for local development before JWT restaurant-owner login
-// exists. It injects req.user.id from x-user-id so restaurant controllers can
-// use the final auth contract during development without requiring real tokens.
-const authenticateWithDevUserHeader = async (req: CustomRequest) => {
-  const userIdHeader = req.get("x-user-id");
-
-  if (!userIdHeader) {
-    throw new UnAuthenticatedError("Please provide the authorization header");
-  }
-
-  const userId = Number(userIdHeader);
+const authenticateActiveRestaurantOwnerById = async (
+  userId: number,
+  req: CustomRequest,
+) => {
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new BadRequestError("Invalid x-user-id header");
+    throw new BadRequestError("Invalid user identity");
   }
 
   const user = await prisma.user.findFirst({
@@ -78,11 +64,41 @@ const authenticateWithDevUserHeader = async (req: CustomRequest) => {
 
   if (!user) {
     throw new UnAuthenticatedError(
-      "Invalid development restaurant owner identity",
+      "Invalid or deactivated restaurant owner account",
     );
   }
 
   req.user = { id: user.id };
+};
+
+// Temporary fallback for local development before JWT customer login exists.
+// It injects req.customer.id from x-customer-id so controllers can keep using
+// the final contract without bringing customerId back into request bodies.
+const authenticateWithDevCustomerHeader = async (req: CustomRequest) => {
+  const customerIdHeader = req.get("x-customer-id");
+
+  if (!customerIdHeader) {
+    throw new UnAuthenticatedError("Please provide the authorization header");
+  }
+
+  const customerId = Number(customerIdHeader);
+
+  await authenticateActiveCustomerById(customerId, req);
+};
+
+// Temporary fallback for local development before JWT restaurant-owner login
+// exists. It injects req.user.id from x-user-id so restaurant controllers can
+// use the final auth contract during development without requiring real tokens.
+const authenticateWithDevUserHeader = async (req: CustomRequest) => {
+  const userIdHeader = req.get("x-user-id");
+
+  if (!userIdHeader) {
+    throw new UnAuthenticatedError("Please provide the authorization header");
+  }
+
+  const userId = Number(userIdHeader);
+
+  await authenticateActiveRestaurantOwnerById(userId, req);
 };
 
 // Development-only auth fallback selector. We prefer x-user-id when present so
@@ -145,11 +161,9 @@ const authenticateRequest = async (req: CustomRequest) => {
     }
 
     if (payload.userId) {
-      req.user = { id: +payload.userId };
+      await authenticateActiveRestaurantOwnerById(Number(payload.userId), req);
     } else if (payload.customerId) {
-      req.customer = {
-        id: payload.customerId,
-      };
+      await authenticateActiveCustomerById(Number(payload.customerId), req);
     }
   } catch (error) {
     if (error instanceof AppErrorImpl) {

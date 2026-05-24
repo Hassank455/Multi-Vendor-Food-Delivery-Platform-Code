@@ -1,8 +1,11 @@
+import { buildPaginationMeta } from "../../common/pagination";
 import { NotFoundError, BadRequestError } from "../../errors";
 import { OrderStatus } from "../../generated/prisma/client";
 import {
   UpdateCustomerProfileDto,
   CreateCustomerReviewDto,
+  GetCustomerReviewsQueryDto,
+  PaginatedCustomerReviewsDto,
 } from "./customer.dto";
 import { CustomerRepo } from "./customer.repo";
 
@@ -53,8 +56,28 @@ export class CustomerService {
     );
   }
 
-  async getCustomerReviews(customerId: number) {
-    return await this.customerRepo.getCustomerReviews(customerId);
+  async getCustomerReviews(
+    customerId: number,
+    query: GetCustomerReviewsQueryDto,
+  ): Promise<PaginatedCustomerReviewsDto> {
+    const { reviews, total } = await this.customerRepo.getCustomerReviews(
+      customerId,
+      query,
+    );
+    return {
+      data: reviews,
+      pagination: buildPaginationMeta(query.page, query.limit, total),
+    };
+  }
+
+  async deactivateMyAccount(customerId: number) {
+    const deactivated = await this.customerRepo.deactivateMyAccount(customerId);
+
+    if (!deactivated) {
+      throw new NotFoundError("Customer not found");
+    }
+
+    return deactivated;
   }
 
   // async getPaymentPreference(customerId: number) {
@@ -66,9 +89,5 @@ export class CustomerService {
   //   dto: UpsertPaymentPreferenceDto,
   // ) {
   //   return await this.customerRepo.upsertPaymentPreference(customerId, dto);
-  // }
-
-  // async deactivateMyAccount(customerId: number) {
-  //   return await this.customerRepo.deactivateMyAccount(customerId);
   // }
 }

@@ -7,6 +7,7 @@ import { CustomerService } from "./customer.service";
 import {
   UpdateCustomerProfileDto,
   CreateCustomerReviewDto,
+  GetCustomerReviewsQueryDto,
 } from "./customer.dto";
 
 export class CustomerController {
@@ -66,20 +67,35 @@ export class CustomerController {
   getCustomerReviews = asyncHandler(
     async (req: CustomRequest, res: Response) => {
       const customerId = this.getCustomerId(req);
-      const reviews = await this.customerService.getCustomerReviews(customerId);
+      // explain this line
+      // The query parameters are cast to the expected DTO type
+      // we are typed as unknown first to bypass the type checking, then we assert it as the expected DTO type, this is because the query parameters are always of type string, and we need to convert them to the expected types in the DTO, for example, page and limit should be numbers, but they come as strings in the query parameters, so we need to convert them to numbers before passing them to the service layer
+      const query = req.query as unknown as GetCustomerReviewsQueryDto;
+
+      const reviews = await this.customerService.getCustomerReviews(
+        customerId,
+        query,
+      );
 
       res.status(StatusCodes.OK).json({
         message: "Customer reviews fetched successfully",
-        data: reviews,
+        data: reviews.data,
+        pagination: reviews.pagination,
       });
     },
   );
 
-  // deactivateMyAccount = asyncHandler(
-  //   async (req: CustomRequest, res: Response) => {
-  //     this.getCustomerId(req);
-  //   },
-  // );
+  deactivateMyAccount = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const customerId = this.getCustomerId(req);
+      
+      await this.customerService.deactivateMyAccount(customerId);
+
+      res.status(StatusCodes.OK).json({
+        message: "Customer account deactivated successfully",
+      });
+    },
+  );
 
   // getPaymentPreference = asyncHandler(
   //   async (req: CustomRequest, res: Response) => {
