@@ -5,7 +5,10 @@ import {
   CreateOrderItemInput,
   CustomerOrderDetailsDto,
   CustomerOrderListItemDto,
+  CustomerOrderStatusDto,
+  GetCustomerOrdersQueryDto,
   GetRestaurantOrdersQueryDto,
+  PaginatedCustomerOrdersDto,
   PaginatedRestaurantOrdersDto,
   PlaceOrderDto,
   PreparedOrderItem,
@@ -165,27 +168,28 @@ export class OrderService {
   // ============== GET CUSTOMER ORDERS =====================
   async getCustomerOrders(
     customerId: number,
-  ): Promise<CustomerOrderListItemDto[]> {
-    const orders = await this.orderRepo.getCustomerOrders(customerId);
-    return orders.map((order) => ({
-      id: order.id,
-      status: order.status,
-      paymentMethod: order.paymentMethod,
-      totalPrice: Number(order.totalPrice),
-      createdAt: order.createdAt,
-      restaurant: {
-        id: order.restaurant.id,
-        name: order.restaurant.name,
-      },
-      // items: order.items.map((item) => ({
-      //   menuItemId: item.menuItemId,
-      //   name: item.menuItem.name,
-      //   quantity: item.quantity,
-      //   unitPrice: Number(item.price),
-      //   totalPrice: item.quantity * Number(item.price),
-      // })),
-      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
-    }));
+    query: GetCustomerOrdersQueryDto,
+  ): Promise<PaginatedCustomerOrdersDto> {
+    const { orders, total } = await this.orderRepo.getCustomerOrders(
+      customerId,
+      query,
+    );
+
+    return {
+      data: orders.map((order) => ({
+        id: order.id,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        totalPrice: Number(order.totalPrice),
+        createdAt: order.createdAt,
+        restaurant: {
+          id: order.restaurant.id,
+          name: order.restaurant.name,
+        },
+        items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      })),
+      pagination: buildPaginationMeta(query.page, query.limit, total),
+    };
   }
 
   // ============== GET CUSTOMER ORDER BY ID =====================
@@ -455,7 +459,9 @@ export class OrderService {
           postalCode: updatedOrder.customerAddress.postalCode ?? "",
           governorate: updatedOrder.customerAddress.governorate,
         },
-        items: updatedOrder.items.map((item) => this.mapPreparedOrderItem(item)),
+        items: updatedOrder.items.map((item) =>
+          this.mapPreparedOrderItem(item),
+        ),
         transactions: updatedOrder.transactions.map((transaction) => ({
           id: transaction.id,
           amount: Number(transaction.amount),
@@ -501,10 +507,7 @@ export class OrderService {
 
     const allowedNextStatuses: Partial<Record<OrderStatus, OrderStatus[]>> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-      [OrderStatus.CONFIRMED]: [
-        OrderStatus.PREPARING,
-        OrderStatus.CANCELLED,
-      ],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.PREPARING]: [OrderStatus.OUT_FOR_DELIVERY],
       [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
     };
@@ -515,5 +518,24 @@ export class OrderService {
         `Cannot update order status from ${currentStatus} to ${nextStatus}`,
       );
     }
+  }
+
+  async getCustomerOrderStatus(
+    customerId: number,
+    orderId: number,
+  ): Promise<CustomerOrderStatusDto> {
+    const order = await this.orderRepo.getCustomerOrderStatus(
+      customerId,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    return {
+      orderId: order.id,
+      status: order.status,
+    };
   }
 }

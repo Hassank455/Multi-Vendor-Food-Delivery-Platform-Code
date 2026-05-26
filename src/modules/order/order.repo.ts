@@ -6,6 +6,7 @@ import {
 } from "../../generated/prisma/client";
 import type {
   CreateOrderItemInput,
+  GetCustomerOrdersQueryDto,
   GetRestaurantOrdersQueryDto,
 } from "./order.dto";
 
@@ -79,11 +80,25 @@ export class OrderRepo {
     });
   }
 
-  async getCustomerOrders(customerId: number, tx?: PrismaTransaction) {
-    return await this.db(tx).order.findMany({
-      where: {
-        customerId,
-      },
+  async getCustomerOrders(
+    customerId: number,
+    query: GetCustomerOrdersQueryDto,
+    tx?: PrismaTransaction,
+  ) {
+    const where: Prisma.OrderWhereInput = {
+      customerId,
+      ...(query.status && { status: query.status }),
+    };
+
+    const skip = (query.page - 1) * query.limit;
+
+    const countQuery = this.db(tx).order.count({
+      where,
+    });
+    const ordersQuery = this.db(tx).order.findMany({
+      where,
+      skip,
+      take: query.limit,
       include: {
         restaurant: {
           select: {
@@ -106,6 +121,15 @@ export class OrderRepo {
         createdAt: "desc",
       },
     });
+
+    const [total, orders] = tx
+      ? await Promise.all([countQuery, ordersQuery])
+      : await prisma.$transaction([countQuery, ordersQuery]);
+
+    return {
+      total,
+      orders,
+    };
   }
 
   async getCustomerOrderById(
@@ -352,6 +376,23 @@ export class OrderRepo {
       },
       data: {
         status: nextStatus,
+      },
+    });
+  }
+
+  async getCustomerOrderStatus(
+    customerId: number,
+    orderId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).order.findFirst({
+      where: {
+        id: orderId,
+        customerId,
+      },
+      select: {
+        id: true,
+        status: true,
       },
     });
   }

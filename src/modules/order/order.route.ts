@@ -22,7 +22,12 @@ router.post(
   orderController.placeOrder,
 );
 
-router.get("/", isAuth, orderController.getCustomerOrders);
+router.get(
+  "/",
+  isAuth,
+  validate(orderValidators.getCustomerOrdersSchema),
+  orderController.getCustomerOrders,
+);
 router.get(
   "/restaurant",
   isAuth,
@@ -40,6 +45,13 @@ router.patch(
   isAuth,
   validate(orderValidators.updateRestaurantOrderStatusSchema),
   orderController.updateOrderStatus,
+);
+
+router.get(
+  "/:id/status",
+  isAuth,
+  validate(orderValidators.getCustomerOrderStatusSchema),
+  orderController.getCustomerOrderStatus,
 );
 
 router.get(

@@ -41,3 +41,19 @@ export const getRestaurantOrdersSchema = z.object({
     status: z.nativeEnum(OrderStatus).optional(),
   }),
 });
+
+export const getCustomerOrdersSchema = z.object({
+  body: z.object({}).strict(),
+  params: z.object({}).strict(),
+  query: paginationQuerySchema.extend({
+    status: z.nativeEnum(OrderStatus).optional(),
+  }),
+});
+
+export const getCustomerOrderStatusSchema = z.object({
+  body: z.object({}).strict(),
+  query: z.object({}).strict(),
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+});

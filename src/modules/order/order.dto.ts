@@ -58,6 +58,15 @@ export interface CustomerOrderListItemDto {
   items: PreparedOrderItem[];
 }
 
+export interface GetCustomerOrdersQueryDto extends PaginationQueryDto {
+  status?: OrderStatus;
+}
+
+export interface PaginatedCustomerOrdersDto {
+  data: CustomerOrderListItemDto[];
+  pagination: PaginationMetaDto;
+}
+
 export interface CustomerOrderDetailsDto {
   id: number;
   status: OrderStatus;
@@ -141,4 +150,9 @@ export interface UpdateRestaurantOrderStatusDto {
 export interface PaginatedRestaurantOrdersDto {
   data: RestaurantOrderListItemDto[];
   pagination: PaginationMetaDto;
+}
+
+export interface CustomerOrderStatusDto {
+  orderId: number;
+  status: OrderStatus;
 }

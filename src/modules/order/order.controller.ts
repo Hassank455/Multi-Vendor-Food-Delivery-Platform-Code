@@ -3,6 +3,7 @@ import { OrderService } from "./order.service";
 import asyncHandler from "../../utils/asyncHandler";
 import {
   GetRestaurantOrdersQueryDto,
+  GetCustomerOrdersQueryDto,
   PlaceOrderDto,
   UpdateRestaurantOrderStatusDto,
 } from "./order.dto";
@@ -48,11 +49,17 @@ export class OrderController {
   getCustomerOrders = asyncHandler(
     async (req: CustomRequest, res: Response) => {
       const customerId = this.getCustomerId(req);
-      const orders = await this.orderService.getCustomerOrders(customerId);
+      const query = req.query as unknown as GetCustomerOrdersQueryDto;
+
+      const result = await this.orderService.getCustomerOrders(
+        customerId,
+        query,
+      );
 
       res.status(StatusCodes.OK).json({
         message: "Customer orders fetched successfully",
-        data: orders,
+        data: result.data,
+        pagination: result.pagination,
       });
     },
   );
@@ -143,6 +150,23 @@ export class OrderController {
       res.status(StatusCodes.OK).json({
         message: "Order status updated successfully",
         data: order,
+      });
+    },
+  );
+
+  getCustomerOrderStatus = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const customerId = this.getCustomerId(req);
+      const orderId = Number(req.params.id);
+
+      const status = await this.orderService.getCustomerOrderStatus(
+        customerId,
+        orderId,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Customer order status fetched successfully",
+        data: status,
       });
     },
   );
