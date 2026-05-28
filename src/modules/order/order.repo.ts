@@ -396,4 +396,16 @@ export class OrderRepo {
       },
     });
   }
+
+  async getRestaurantSummary(restaurantId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).restaurant.findFirst({
+      where: {
+        id: restaurantId,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
 }

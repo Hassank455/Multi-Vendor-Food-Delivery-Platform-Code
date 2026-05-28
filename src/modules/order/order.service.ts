@@ -7,7 +7,9 @@ import {
   CustomerOrderListItemDto,
   CustomerOrderStatusDto,
   GetCustomerOrdersQueryDto,
+  GetOrderSummaryDto,
   GetRestaurantOrdersQueryDto,
+  OrderSummaryDto,
   PaginatedCustomerOrdersDto,
   PaginatedRestaurantOrdersDto,
   PlaceOrderDto,
@@ -140,7 +142,7 @@ export class OrderService {
   private async validateCustomerAddressOwnership(
     customerId: number,
     customerAddressId: number,
-    tx: PrismaTransaction,
+    tx?: PrismaTransaction,
   ) {
     const customerAddress = await this.customerAddressRepo.getCustomerAddress(
       customerId,
@@ -536,6 +538,74 @@ export class OrderService {
     return {
       orderId: order.id,
       status: order.status,
+    };
+  }
+
+  async getOrderSummary(
+    customerId: number,
+    dto: GetOrderSummaryDto,
+  ): Promise<OrderSummaryDto> {
+    const cart = (await this.cartRepo.getCartDetails(
+      customerId,
+    )) as CartForCheckout | null;
+
+    this.ensureCartExists(cart);
+    this.validateCartItemsAvailability(cart);
+
+    if (cart.restaurantId == null) {
+      throw new BadRequestError("Cart restaurant is not set");
+    }
+
+    const customerAddress = await this.validateCustomerAddressOwnership(
+      customerId,
+      dto.customerAddressId,
+    );
+
+    const restaurant = await this.orderRepo.getRestaurantSummary(
+      cart.restaurantId,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const items = cart.items.map((item) => ({
+      menuItemId: item.menuItemId,
+      name: item.menuItem.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.price),
+      totalPrice: item.quantity * Number(item.price),
+      isAvailable: item.menuItem.isAvailable,
+    }));
+
+    const subTotal = Number(cart.subTotal);
+    const discountAmount = 0;
+    const deliveryFee = 0;
+    const taxAmount = 0;
+    const total = subTotal - discountAmount + deliveryFee + taxAmount;
+
+    return {
+      restaurant: {
+        id: restaurant.id,
+        name: restaurant.name,
+      },
+      customerAddress: {
+        id: customerAddress.id,
+        street: customerAddress.street,
+        city: customerAddress.city,
+        buildingNo: customerAddress.buildingNo ?? null,
+        postalCode: customerAddress.postalCode ?? null,
+        governorate: customerAddress.governorate,
+      },
+      paymentMethod: dto.paymentMethod,
+      items,
+      pricing: {
+        subTotal,
+        discountAmount,
+        deliveryFee,
+        taxAmount,
+        total,
+      },
     };
   }
 }

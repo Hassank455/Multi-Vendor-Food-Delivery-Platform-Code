@@ -6,6 +6,7 @@ import {
   GetCustomerOrdersQueryDto,
   PlaceOrderDto,
   UpdateRestaurantOrderStatusDto,
+  GetOrderSummaryDto,
 } from "./order.dto";
 import { StatusCodes } from "http-status-codes";
 import { CustomRequest } from "../../common/tdos";
@@ -170,4 +171,19 @@ export class OrderController {
       });
     },
   );
+
+  getOrderSummary = asyncHandler(async (req: CustomRequest, res: Response) => {
+    const customerId = this.getCustomerId(req);
+    const dto: GetOrderSummaryDto = {
+      customerAddressId: req.body.customerAddressId,
+      paymentMethod: req.body.paymentMethod,
+    };
+
+    const summary = await this.orderService.getOrderSummary(customerId, dto);
+
+    res.status(StatusCodes.OK).json({
+      message: "Order summary fetched successfully",
+      data: summary,
+    });
+  });
 }

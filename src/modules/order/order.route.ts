@@ -68,4 +68,12 @@ router.patch(
   orderController.cancelCustomerOrder,
 );
 
+// we use post method here because we need to send the customerAddressId and paymentMethod in the body to calculate the order summary.
+router.post(
+  "/summary",
+  isAuth,
+  validate(orderValidators.getOrderSummarySchema),
+  orderController.getOrderSummary,
+);
+
 export default router;

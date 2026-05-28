@@ -1,12 +1,8 @@
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/enums";
-import {
-  PaginationMetaDto,
-  PaginationQueryDto,
-} from "../../common/pagination";
+import { PaginationMetaDto, PaginationQueryDto } from "../../common/pagination";
 
 export interface PlaceOrderDto {
   customerAddressId: number;
-  //   paymentMethod: "STRIPE" | "PAYPAL" | "CASH_ON_DELIVERY";
   paymentMethod: PaymentMethod;
 }
 
@@ -155,4 +151,39 @@ export interface PaginatedRestaurantOrdersDto {
 export interface CustomerOrderStatusDto {
   orderId: number;
   status: OrderStatus;
+}
+
+export interface OrderSummaryDto {
+  restaurant: {
+    id: number;
+    name: string;
+  };
+  customerAddress: {
+    id: number;
+    street: string;
+    city: string;
+    buildingNo: string | null;
+    postalCode: string | null;
+    governorate: string;
+  };
+  paymentMethod: PaymentMethod;
+  items: {
+    menuItemId: number;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    isAvailable: boolean;
+  }[];
+  pricing: {
+    subTotal: number;
+    discountAmount: number;
+    deliveryFee: number;
+    taxAmount: number;
+    total: number;
+  };
+}
+export interface GetOrderSummaryDto {
+  customerAddressId: number;
+  paymentMethod: PaymentMethod;
 }

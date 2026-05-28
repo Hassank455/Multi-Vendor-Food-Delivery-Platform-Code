@@ -57,3 +57,9 @@ export const getCustomerOrderStatusSchema = z.object({
     id: z.coerce.number().int().positive(),
   }),
 });
+export const getOrderSummarySchema = z.object({
+  body: z.object({
+    customerAddressId: z.number().int().positive(),
+    paymentMethod: z.nativeEnum(PaymentMethod),
+  }),
+});
