@@ -1,8 +1,8 @@
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/enums";
+import { PaginationMetaDto, PaginationQueryDto } from "../../common/pagination";
 
 export interface PlaceOrderDto {
   customerAddressId: number;
-  //   paymentMethod: "STRIPE" | "PAYPAL" | "CASH_ON_DELIVERY";
   paymentMethod: PaymentMethod;
 }
 
@@ -52,6 +52,15 @@ export interface CustomerOrderListItemDto {
     name: string;
   };
   items: PreparedOrderItem[];
+}
+
+export interface GetCustomerOrdersQueryDto extends PaginationQueryDto {
+  status?: OrderStatus;
+}
+
+export interface PaginatedCustomerOrdersDto {
+  data: CustomerOrderListItemDto[];
+  pagination: PaginationMetaDto;
 }
 
 export interface CustomerOrderDetailsDto {
@@ -126,26 +135,55 @@ export interface RestaurantOrderDetailsDto {
   }[];
 }
 
-export interface GetRestaurantOrdersQueryDto {
+export interface GetRestaurantOrdersQueryDto extends PaginationQueryDto {
   status?: OrderStatus;
-  page: number;
-  limit: number;
 }
 
 export interface UpdateRestaurantOrderStatusDto {
   status: OrderStatus;
 }
 
-export interface PaginationMetaDto {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-
 export interface PaginatedRestaurantOrdersDto {
   data: RestaurantOrderListItemDto[];
   pagination: PaginationMetaDto;
+}
+
+export interface CustomerOrderStatusDto {
+  orderId: number;
+  status: OrderStatus;
+}
+
+export interface OrderSummaryDto {
+  restaurant: {
+    id: number;
+    name: string;
+  };
+  customerAddress: {
+    id: number;
+    street: string;
+    city: string;
+    buildingNo: string | null;
+    postalCode: string | null;
+    governorate: string;
+  };
+  paymentMethod: PaymentMethod;
+  items: {
+    menuItemId: number;
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    isAvailable: boolean;
+  }[];
+  pricing: {
+    subTotal: number;
+    discountAmount: number;
+    deliveryFee: number;
+    taxAmount: number;
+    total: number;
+  };
+}
+export interface GetOrderSummaryDto {
+  customerAddressId: number;
+  paymentMethod: PaymentMethod;
 }

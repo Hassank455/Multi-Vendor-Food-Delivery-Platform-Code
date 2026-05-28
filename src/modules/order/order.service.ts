@@ -5,7 +5,12 @@ import {
   CreateOrderItemInput,
   CustomerOrderDetailsDto,
   CustomerOrderListItemDto,
+  CustomerOrderStatusDto,
+  GetCustomerOrdersQueryDto,
+  GetOrderSummaryDto,
   GetRestaurantOrdersQueryDto,
+  OrderSummaryDto,
+  PaginatedCustomerOrdersDto,
   PaginatedRestaurantOrdersDto,
   PlaceOrderDto,
   PreparedOrderItem,
@@ -19,6 +24,7 @@ import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
 import type { Prisma } from "../../generated/prisma/client";
 import { CustomerAddressRepo } from "../customer_address/customer_address.repo";
+import { buildPaginationMeta } from "../../common/pagination";
 const logger = new LoggerService("order");
 type PrismaTransaction = Prisma.TransactionClient;
 export class OrderService {
@@ -136,7 +142,7 @@ export class OrderService {
   private async validateCustomerAddressOwnership(
     customerId: number,
     customerAddressId: number,
-    tx: PrismaTransaction,
+    tx?: PrismaTransaction,
   ) {
     const customerAddress = await this.customerAddressRepo.getCustomerAddress(
       customerId,
@@ -164,27 +170,28 @@ export class OrderService {
   // ============== GET CUSTOMER ORDERS =====================
   async getCustomerOrders(
     customerId: number,
-  ): Promise<CustomerOrderListItemDto[]> {
-    const orders = await this.orderRepo.getCustomerOrders(customerId);
-    return orders.map((order) => ({
-      id: order.id,
-      status: order.status,
-      paymentMethod: order.paymentMethod,
-      totalPrice: Number(order.totalPrice),
-      createdAt: order.createdAt,
-      restaurant: {
-        id: order.restaurant.id,
-        name: order.restaurant.name,
-      },
-      // items: order.items.map((item) => ({
-      //   menuItemId: item.menuItemId,
-      //   name: item.menuItem.name,
-      //   quantity: item.quantity,
-      //   unitPrice: Number(item.price),
-      //   totalPrice: item.quantity * Number(item.price),
-      // })),
-      items: order.items.map((item) => this.mapPreparedOrderItem(item)),
-    }));
+    query: GetCustomerOrdersQueryDto,
+  ): Promise<PaginatedCustomerOrdersDto> {
+    const { orders, total } = await this.orderRepo.getCustomerOrders(
+      customerId,
+      query,
+    );
+
+    return {
+      data: orders.map((order) => ({
+        id: order.id,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        totalPrice: Number(order.totalPrice),
+        createdAt: order.createdAt,
+        restaurant: {
+          id: order.restaurant.id,
+          name: order.restaurant.name,
+        },
+        items: order.items.map((item) => this.mapPreparedOrderItem(item)),
+      })),
+      pagination: buildPaginationMeta(query.page, query.limit, total),
+    };
   }
 
   // ============== GET CUSTOMER ORDER BY ID =====================
@@ -321,9 +328,6 @@ export class OrderService {
       restaurant.id,
       query,
     );
-    
-
-    const totalPages = total === 0 ? 0 : Math.ceil(total / query.limit);
 
     return {
       data: orders.map((order) => ({
@@ -339,14 +343,7 @@ export class OrderService {
         },
         items: order.items.map((item) => this.mapPreparedOrderItem(item)),
       })),
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages,
-        hasNextPage: query.page < totalPages,
-        hasPreviousPage: query.page > 1,
-      },
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 
@@ -464,7 +461,9 @@ export class OrderService {
           postalCode: updatedOrder.customerAddress.postalCode ?? "",
           governorate: updatedOrder.customerAddress.governorate,
         },
-        items: updatedOrder.items.map((item) => this.mapPreparedOrderItem(item)),
+        items: updatedOrder.items.map((item) =>
+          this.mapPreparedOrderItem(item),
+        ),
         transactions: updatedOrder.transactions.map((transaction) => ({
           id: transaction.id,
           amount: Number(transaction.amount),
@@ -510,10 +509,7 @@ export class OrderService {
 
     const allowedNextStatuses: Partial<Record<OrderStatus, OrderStatus[]>> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-      [OrderStatus.CONFIRMED]: [
-        OrderStatus.PREPARING,
-        OrderStatus.CANCELLED,
-      ],
+      [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.PREPARING]: [OrderStatus.OUT_FOR_DELIVERY],
       [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
     };
@@ -524,5 +520,92 @@ export class OrderService {
         `Cannot update order status from ${currentStatus} to ${nextStatus}`,
       );
     }
+  }
+
+  async getCustomerOrderStatus(
+    customerId: number,
+    orderId: number,
+  ): Promise<CustomerOrderStatusDto> {
+    const order = await this.orderRepo.getCustomerOrderStatus(
+      customerId,
+      orderId,
+    );
+
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+
+    return {
+      orderId: order.id,
+      status: order.status,
+    };
+  }
+
+  async getOrderSummary(
+    customerId: number,
+    dto: GetOrderSummaryDto,
+  ): Promise<OrderSummaryDto> {
+    const cart = (await this.cartRepo.getCartDetails(
+      customerId,
+    )) as CartForCheckout | null;
+
+    this.ensureCartExists(cart);
+    this.validateCartItemsAvailability(cart);
+
+    if (cart.restaurantId == null) {
+      throw new BadRequestError("Cart restaurant is not set");
+    }
+
+    const customerAddress = await this.validateCustomerAddressOwnership(
+      customerId,
+      dto.customerAddressId,
+    );
+
+    const restaurant = await this.orderRepo.getRestaurantSummary(
+      cart.restaurantId,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const items = cart.items.map((item) => ({
+      menuItemId: item.menuItemId,
+      name: item.menuItem.name,
+      quantity: item.quantity,
+      unitPrice: Number(item.price),
+      totalPrice: item.quantity * Number(item.price),
+      isAvailable: item.menuItem.isAvailable,
+    }));
+
+    const subTotal = Number(cart.subTotal);
+    const discountAmount = 0;
+    const deliveryFee = 0;
+    const taxAmount = 0;
+    const total = subTotal - discountAmount + deliveryFee + taxAmount;
+
+    return {
+      restaurant: {
+        id: restaurant.id,
+        name: restaurant.name,
+      },
+      customerAddress: {
+        id: customerAddress.id,
+        street: customerAddress.street,
+        city: customerAddress.city,
+        buildingNo: customerAddress.buildingNo ?? null,
+        postalCode: customerAddress.postalCode ?? null,
+        governorate: customerAddress.governorate,
+      },
+      paymentMethod: dto.paymentMethod,
+      items,
+      pricing: {
+        subTotal,
+        discountAmount,
+        deliveryFee,
+        taxAmount,
+        total,
+      },
+    };
   }
 }

@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/enums";
+import { paginationQuerySchema } from "../../common/pagination";
 
 export const placeOrderSchema = z.object({
   body: z.object({
@@ -36,9 +37,29 @@ export const updateRestaurantOrderStatusSchema = z.object({
 });
 
 export const getRestaurantOrdersSchema = z.object({
-  query: z.object({
+  query: paginationQuerySchema.extend({
     status: z.nativeEnum(OrderStatus).optional(),
-    page: z.coerce.number().int().positive().default(1),
-    limit: z.coerce.number().int().positive().max(50).default(10),
+  }),
+});
+
+export const getCustomerOrdersSchema = z.object({
+  body: z.object({}).strict(),
+  params: z.object({}).strict(),
+  query: paginationQuerySchema.extend({
+    status: z.nativeEnum(OrderStatus).optional(),
+  }),
+});
+
+export const getCustomerOrderStatusSchema = z.object({
+  body: z.object({}).strict(),
+  query: z.object({}).strict(),
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+  }),
+});
+export const getOrderSummarySchema = z.object({
+  body: z.object({
+    customerAddressId: z.number().int().positive(),
+    paymentMethod: z.nativeEnum(PaymentMethod),
   }),
 });

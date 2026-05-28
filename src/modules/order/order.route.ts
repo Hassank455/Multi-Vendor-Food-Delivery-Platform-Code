@@ -22,7 +22,12 @@ router.post(
   orderController.placeOrder,
 );
 
-router.get("/", isAuth, orderController.getCustomerOrders);
+router.get(
+  "/",
+  isAuth,
+  validate(orderValidators.getCustomerOrdersSchema),
+  orderController.getCustomerOrders,
+);
 router.get(
   "/restaurant",
   isAuth,
@@ -43,6 +48,13 @@ router.patch(
 );
 
 router.get(
+  "/:id/status",
+  isAuth,
+  validate(orderValidators.getCustomerOrderStatusSchema),
+  orderController.getCustomerOrderStatus,
+);
+
+router.get(
   "/:id",
   isAuth,
   validate(orderValidators.getCustomerOrderByIdSchema),
@@ -54,6 +66,14 @@ router.patch(
   isAuth,
   validate(orderValidators.cancelOrderSchema),
   orderController.cancelCustomerOrder,
+);
+
+// we use post method here because we need to send the customerAddressId and paymentMethod in the body to calculate the order summary.
+router.post(
+  "/summary",
+  isAuth,
+  validate(orderValidators.getOrderSummarySchema),
+  orderController.getOrderSummary,
 );
 
 export default router;
