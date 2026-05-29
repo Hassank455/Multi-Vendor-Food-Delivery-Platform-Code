@@ -47,7 +47,7 @@ export class CatalogService {
     return restaurant;
   }
 
-  async getRestaurantMenu(
+  async searchRestaurantMenuItems(
     restaurantId: number,
     query: SearchMenuItemsQueryDto,
   ): Promise<PaginatedRestaurantMenuItemsDto> {
@@ -60,16 +60,25 @@ export class CatalogService {
     };
   }
 
-  async searchRestaurantMenuItems(
+  async getRestaurantMenu(
     restaurantId: number,
     query: SearchMenuItemsQueryDto,
   ): Promise<PaginatedRestaurantMenuItemsDto> {
-    void this.catalogRepository;
-    void restaurantId;
+    const restaurant =
+      await this.catalogRepository.getRestaurantById(restaurantId);
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const { total, menuItems } = await this.catalogRepository.getRestaurantMenu(
+      restaurantId,
+      query,
+    );
 
     return {
-      data: [],
-      pagination: buildPaginationMeta(query.page, query.limit, 0),
+      data: menuItems,
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 }

@@ -30,10 +30,4 @@ router.get(
   catalogController.getRestaurantMenu,
 );
 
-router.get(
-  "/:restaurantId/menu-items/search",
-  validate(catalogValidators.searchRestaurantMenuItemsSchema),
-  catalogController.searchRestaurantMenuItems,
-);
-
 export default router;

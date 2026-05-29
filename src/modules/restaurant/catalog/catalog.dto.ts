@@ -14,7 +14,10 @@ export interface RestaurantCatalogItemDto {
 
 export interface RestaurantMenuCatalogItemDto {
   id: number;
-  categoryId: number;
+  category: {
+    id: number;
+    name: string;
+  };
   name: string;
   description: string;
   price: number;
