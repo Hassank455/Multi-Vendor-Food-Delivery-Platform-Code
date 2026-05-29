@@ -7,6 +7,7 @@ import {
   RestaurantCatalogItemDto,
   SearchMenuItemsQueryDto,
 } from "./catalog.dto";
+import { NotFoundError } from "../../../errors";
 
 export class CatalogService {
   constructor(private catalogRepository: CatalogRepository) {}
@@ -14,11 +15,12 @@ export class CatalogService {
   async getRestaurants(
     query: GetRestaurantsQueryDto,
   ): Promise<PaginatedRestaurantsDto> {
-    void this.catalogRepository;
+    const { total, restaurants } =
+      await this.catalogRepository.getRestaurants(query);
 
     return {
-      data: [],
-      pagination: buildPaginationMeta(query.page, query.limit, 0),
+      data: restaurants,
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 
@@ -36,15 +38,13 @@ export class CatalogService {
   async getRestaurantById(
     restaurantId: number,
   ): Promise<RestaurantCatalogItemDto> {
-    void this.catalogRepository;
+    const restaurant =
+      await this.catalogRepository.getRestaurantById(restaurantId);
 
-    return {
-      id: restaurantId,
-      name: "Draft restaurant",
-      phone: null,
-      address: null,
-      rating: 0,
-    };
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+    return restaurant;
   }
 
   async getRestaurantMenu(

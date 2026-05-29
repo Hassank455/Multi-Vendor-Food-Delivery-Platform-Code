@@ -60,6 +60,8 @@ model Restaurant {
   address String?
   ownerId Int
   rating  Float   @default(0)
+  isEnabled Boolean  @default(true)
+  createdAt DateTime  @default(now())
 
   owner User @relation(fields: [ownerId], references: [id])
 

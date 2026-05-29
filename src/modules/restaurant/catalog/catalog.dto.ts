@@ -1,4 +1,7 @@
-import { PaginationMetaDto, PaginationQueryDto } from "../../../common/pagination";
+import {
+  PaginationMetaDto,
+  PaginationQueryDto,
+} from "../../../common/pagination";
 
 export interface RestaurantCatalogItemDto {
   id: number;
@@ -6,6 +9,7 @@ export interface RestaurantCatalogItemDto {
   phone: string | null;
   address: string | null;
   rating: number;
+  isEnabled: boolean;
 }
 
 export interface RestaurantMenuCatalogItemDto {
