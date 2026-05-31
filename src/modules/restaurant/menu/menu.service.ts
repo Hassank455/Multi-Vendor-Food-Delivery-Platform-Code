@@ -73,21 +73,42 @@ export class MenuService {
     menuItemId: number,
     dto: UpdateMenuItemDto,
   ): Promise<MenuItemDto> {
-    void this.menuRepository;
-    void ownerId;
-
-    return {
-      id: menuItemId,
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
       restaurantId,
-      category: {
-        id: dto.categoryId ?? 0,
-        name: "Draft category",
-      },
-      name: dto.name ?? "Draft menu item",
-      description: dto.description ?? "",
-      price: dto.price ?? 0,
-      isAvailable: true,
-    };
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const existingMenuItem =
+      await this.menuRepository.findMenuItemByRestaurantId(
+        restaurantId,
+        menuItemId,
+      );
+
+    if (!existingMenuItem) {
+      throw new NotFoundError("Menu item not found");
+    }
+
+    if (dto.categoryId !== undefined) {
+      const category = await this.menuRepository.findCategoryByRestaurantId(
+        restaurantId,
+        dto.categoryId,
+      );
+
+      if (!category) {
+        throw new NotFoundError("Menu category not found");
+      }
+    }
+
+    const updatedMenuItem = await this.menuRepository.updateMenuItem(
+      menuItemId,
+      dto,
+    );
+
+    return updatedMenuItem;
   }
 
   async updateMenuItemStatus(
@@ -99,32 +120,60 @@ export class MenuService {
     void this.menuRepository;
     void ownerId;
 
-    return {
-      id: menuItemId,
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
       restaurantId,
-      category: {
-        id: 0,
-        name: "Draft category",
-      },
-      name: "Draft menu item",
-      description: "",
-      price: 0,
-      isAvailable: dto.isAvailable,
-    };
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const existingMenuItem =
+      await this.menuRepository.findMenuItemByRestaurantId(
+        restaurantId,
+        menuItemId,
+      );
+
+    if (!existingMenuItem) {
+      throw new NotFoundError("Menu item not found");
+    }
+
+    const updatedMenuItem = await this.menuRepository.updateMenuItemStatus(
+      menuItemId,
+      dto,
+    );
+
+    return updatedMenuItem;
   }
 
   async deleteMenuItem(
     ownerId: number,
     restaurantId: number,
     menuItemId: number,
-  ): Promise<{ menuItemId: number; restaurantId: number; deleted: boolean }> {
+  ): Promise<void> {
     void this.menuRepository;
     void ownerId;
 
-    return {
-      menuItemId,
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
       restaurantId,
-      deleted: true,
-    };
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const existingMenuItem =
+      await this.menuRepository.findMenuItemByRestaurantId(
+        restaurantId,
+        menuItemId,
+      );
+
+    if (!existingMenuItem) {
+      throw new NotFoundError("Menu item not found");
+    }
+
+    await this.menuRepository.softDeleteMenuItem(menuItemId);
   }
 }

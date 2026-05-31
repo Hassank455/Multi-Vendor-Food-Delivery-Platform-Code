@@ -20,6 +20,7 @@ export class CatalogRepository {
   ) {
     const where: Prisma.MenuItemWhereInput = {
       restaurantId,
+      deletedAt: null,
       isAvailable: true,
       restaurant: {
         isEnabled: true,

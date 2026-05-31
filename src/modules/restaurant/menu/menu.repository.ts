@@ -4,6 +4,8 @@ import {
   CreateMenuItemDto,
   GetOwnerMenuItemsQueryDto,
   MenuItemDto,
+  UpdateMenuItemDto,
+  UpdateMenuItemStatusDto,
 } from "./menu.dto";
 
 export class MenuRepository {
@@ -13,12 +15,6 @@ export class MenuRepository {
   ): Promise<MenuItemDto> {
     const menuItem = await prisma.menuItem.create({
       data: {
-        // restaurant: {
-        //   connect: {
-        //     id: restaurantId,
-        //     ownerId,
-        //   },
-        // },
         restaurantId: restaurantId,
         categoryId: dto.categoryId,
         name: dto.name,
@@ -74,6 +70,7 @@ export class MenuRepository {
   ) {
     const where: Prisma.MenuItemWhereInput = {
       restaurantId,
+      deletedAt: null,
       ...(query.categoryId && {
         categoryId: query.categoryId,
       }),
@@ -139,6 +136,98 @@ export class MenuRepository {
         id: true,
         ownerId: true,
         name: true,
+      },
+    });
+  }
+
+  async updateMenuItem(
+    menuItemId: number,
+    dto: UpdateMenuItemDto,
+  ): Promise<MenuItemDto> {
+    return await prisma.menuItem.update({
+      where: {
+        id: menuItemId,
+        deletedAt: null,
+      },
+      data: {
+        ...(dto.categoryId !== undefined && {
+          categoryId: dto.categoryId,
+        }),
+        ...(dto.name !== undefined && {
+          name: dto.name,
+        }),
+        ...(dto.description !== undefined && {
+          description: dto.description,
+        }),
+        ...(dto.price !== undefined && {
+          price: dto.price,
+        }),
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        isAvailable: true,
+        restaurantId: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+  async findMenuItemByRestaurantId(restaurantId: number, menuItemId: number) {
+    return await prisma.menuItem.findFirst({
+      where: {
+        id: menuItemId,
+        restaurantId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        restaurantId: true,
+        categoryId: true,
+        name: true,
+      },
+    });
+  }
+
+  async updateMenuItemStatus(menuItemId: number, dto: UpdateMenuItemStatusDto) {
+    return await prisma.menuItem.update({
+      where: {
+        id: menuItemId,
+        deletedAt: null,
+      },
+      data: {
+        isAvailable: dto.isAvailable,
+      },
+      select: {
+        id: true,
+        restaurantId: true,
+        name: true,
+        description: true,
+        price: true,
+        isAvailable: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+  async softDeleteMenuItem(menuItemId: number) {
+    return await prisma.menuItem.updateMany({
+      where: {
+        id: menuItemId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
       },
     });
   }

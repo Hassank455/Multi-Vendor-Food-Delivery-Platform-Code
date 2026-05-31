@@ -81,6 +81,7 @@ model MenuItem {
   categoryId   Int
   price        Float
   isAvailable  Boolean @default(true)
+  deletedAt    DateTime?
 
   restaurant Restaurant   @relation(fields: [restaurantId], references: [id])
   category   MenuCategory @relation(fields: [categoryId], references: [id])

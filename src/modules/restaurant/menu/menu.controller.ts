@@ -106,15 +106,8 @@ export class MenuController {
     const restaurantId = Number(req.params.restaurantId);
     const menuItemId = Number(req.params.menuItemId);
 
-    const result = await this.menuService.deleteMenuItem(
-      ownerId,
-      restaurantId,
-      menuItemId,
-    );
+    await this.menuService.deleteMenuItem(ownerId, restaurantId, menuItemId);
 
-    res.status(StatusCodes.OK).json({
-      message: "Menu item deleted successfully",
-      data: result,
-    });
+    res.status(StatusCodes.NO_CONTENT).send();
   });
 }
