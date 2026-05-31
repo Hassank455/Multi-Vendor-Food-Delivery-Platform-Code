@@ -7,7 +7,6 @@ export const getRestaurantsSchema = z.object({
   }),
 });
 
-export const getTopRatedRestaurantsSchema = getRestaurantsSchema;
 
 export const getRestaurantByIdSchema = z.object({
   params: z.object({
@@ -26,3 +25,9 @@ export const getRestaurantMenuSchema = z.object({
 });
 
 export const searchRestaurantMenuItemsSchema = getRestaurantMenuSchema;
+
+export const getRecommendedRestaurantsSchema = z.object({
+  body: z.object({}).strict(),
+  params: z.object({}).strict(),
+  query: paginationQuerySchema,
+});

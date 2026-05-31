@@ -8,6 +8,7 @@ import {
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
 } from "./menu.dto";
+import { NotFoundError } from "../../../errors";
 
 export class MenuService {
   constructor(private menuRepository: MenuRepository) {}
@@ -17,18 +18,30 @@ export class MenuService {
     restaurantId: number,
     dto: CreateMenuItemDto,
   ): Promise<MenuItemDto> {
-    void this.menuRepository;
-    void ownerId;
-
-    return {
-      id: 0,
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
       restaurantId,
-      categoryId: dto.categoryId,
-      name: dto.name,
-      description: dto.description,
-      price: dto.price,
-      isAvailable: true,
-    };
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const category = await this.menuRepository.findCategoryByRestaurantId(
+      restaurantId,
+      dto.categoryId,
+    );
+
+    if (!category) {
+      throw new NotFoundError("Menu category not found");
+    }
+
+    const menuItem = await this.menuRepository.createMenuItem(
+      restaurantId,
+      dto,
+    );
+
+    return menuItem;
   }
 
   async getOwnerMenuItems(
@@ -36,12 +49,21 @@ export class MenuService {
     restaurantId: number,
     query: GetOwnerMenuItemsQueryDto,
   ): Promise<PaginatedOwnerMenuItemsDto> {
-    void this.menuRepository;
-    void ownerId;
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
+      restaurantId,
+    );
 
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+    const { total, menuItems } = await this.menuRepository.getOwnerMenuItems(
+      restaurantId,
+      query,
+    );
     return {
-      data: [],
-      pagination: buildPaginationMeta(query.page, query.limit, 0),
+      data: menuItems,
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 
@@ -57,7 +79,10 @@ export class MenuService {
     return {
       id: menuItemId,
       restaurantId,
-      categoryId: dto.categoryId ?? 0,
+      category: {
+        id: dto.categoryId ?? 0,
+        name: "Draft category",
+      },
       name: dto.name ?? "Draft menu item",
       description: dto.description ?? "",
       price: dto.price ?? 0,
@@ -77,7 +102,10 @@ export class MenuService {
     return {
       id: menuItemId,
       restaurantId,
-      categoryId: 0,
+      category: {
+        id: 0,
+        name: "Draft category",
+      },
       name: "Draft menu item",
       description: "",
       price: 0,

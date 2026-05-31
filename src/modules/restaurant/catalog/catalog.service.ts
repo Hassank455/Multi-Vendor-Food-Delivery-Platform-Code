@@ -27,11 +27,23 @@ export class CatalogService {
   async getTopRatedRestaurants(
     query: GetRestaurantsQueryDto,
   ): Promise<PaginatedRestaurantsDto> {
-    void this.catalogRepository;
+    const { restaurants, total } =
+      await this.catalogRepository.getTopRatedRestaurants(query);
 
     return {
-      data: [],
-      pagination: buildPaginationMeta(query.page, query.limit, 0),
+      data: restaurants,
+      pagination: buildPaginationMeta(query.page, query.limit, total),
+    };
+  }
+  async getRecommendedRestaurants(
+    query: GetRestaurantsQueryDto,
+  ): Promise<PaginatedRestaurantsDto> {
+    const { restaurants, total } =
+      await this.catalogRepository.getRecommendedRestaurants(query);
+
+    return {
+      data: restaurants,
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 
@@ -45,19 +57,6 @@ export class CatalogService {
       throw new NotFoundError("Restaurant not found");
     }
     return restaurant;
-  }
-
-  async searchRestaurantMenuItems(
-    restaurantId: number,
-    query: SearchMenuItemsQueryDto,
-  ): Promise<PaginatedRestaurantMenuItemsDto> {
-    void this.catalogRepository;
-    void restaurantId;
-
-    return {
-      data: [],
-      pagination: buildPaginationMeta(query.page, query.limit, 0),
-    };
   }
 
   async getRestaurantMenu(

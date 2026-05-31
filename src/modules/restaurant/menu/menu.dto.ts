@@ -1,4 +1,7 @@
-import { PaginationMetaDto, PaginationQueryDto } from "../../../common/pagination";
+import {
+  PaginationMetaDto,
+  PaginationQueryDto,
+} from "../../../common/pagination";
 
 export interface CreateMenuItemDto {
   name: string;
@@ -21,7 +24,10 @@ export interface UpdateMenuItemStatusDto {
 export interface MenuItemDto {
   id: number;
   restaurantId: number;
-  categoryId: number;
+  category: {
+    id: number;
+    name: string;
+  };
   name: string;
   description: string;
   price: number;

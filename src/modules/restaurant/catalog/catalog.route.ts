@@ -14,8 +14,14 @@ router.get(
 
 router.get(
   "/top-rated",
-  validate(catalogValidators.getTopRatedRestaurantsSchema),
+  validate(catalogValidators.getRestaurantsSchema),
   catalogController.getTopRatedRestaurants,
+);
+
+router.get(
+  "/recommendations",
+  validate(catalogValidators.getRecommendedRestaurantsSchema),
+  catalogController.getRecommendedRestaurants,
 );
 
 router.get(
