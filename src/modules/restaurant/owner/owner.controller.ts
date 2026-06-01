@@ -37,7 +37,7 @@ export class OwnerController {
 
   getMyRestaurant = asyncHandler(async (req: CustomRequest, res: Response) => {
     const ownerId = this.getOwnerId(req);
-    const restaurant = await this.ownerService.getMyRestaurant(ownerId);
+    const restaurant = await this.ownerService.findOwnerRestaurant(ownerId);
 
     res.status(StatusCodes.OK).json({
       message: "Owner restaurant fetched successfully",

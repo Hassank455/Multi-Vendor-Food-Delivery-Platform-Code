@@ -5,6 +5,7 @@ import {
   UpdateRestaurantDto,
   UpdateRestaurantStatusDto,
 } from "./owner.dto";
+import { NotFoundError } from "../../../errors";
 
 export class OwnerService {
   constructor(private ownerRepository: OwnerRepository) {}
@@ -17,25 +18,24 @@ export class OwnerService {
 
     return {
       id: 0,
-      ownerId,
-      name: dto.name,
-      phone: dto.phone ?? null,
-      address: dto.address ?? null,
-      status: "DISABLED",
-    };
-  }
-
-  async getMyRestaurant(ownerId: number): Promise<OwnerRestaurantDto> {
-    void this.ownerRepository;
-
-    return {
-      id: 0,
-      ownerId,
       name: "Draft restaurant",
       phone: null,
       address: null,
-      status: "DISABLED",
+      rating: 0,
+      isEnabled: false,
+      createdAt: new Date(),
     };
+  }
+
+  async findOwnerRestaurant(ownerId: number): Promise<OwnerRestaurantDto> {
+    const restaurant =
+      await this.ownerRepository.findOwnerRestaurant(ownerId);
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    return restaurant;
   }
 
   async updateRestaurant(
@@ -46,12 +46,13 @@ export class OwnerService {
     void this.ownerRepository;
 
     return {
-      id: restaurantId,
-      ownerId,
-      name: dto.name ?? "Draft restaurant",
-      phone: dto.phone ?? null,
-      address: dto.address ?? null,
-      status: "DISABLED",
+      id: 0,
+      name: "Draft restaurant",
+      phone: null,
+      address: null,
+      rating: 0,
+      isEnabled: false,
+      createdAt: new Date(),
     };
   }
 
@@ -63,12 +64,13 @@ export class OwnerService {
     void this.ownerRepository;
 
     return {
-      id: restaurantId,
-      ownerId,
+      id: 0,
       name: "Draft restaurant",
       phone: null,
       address: null,
-      status: dto.isEnabled ? "ENABLED" : "DISABLED",
+      rating: 0,
+      isEnabled: false,
+      createdAt: new Date(),
     };
   }
 }

@@ -54,13 +54,13 @@ model CustomerAddress {
 }
 
 model Restaurant {
-  id      Int     @id @default(autoincrement())
+  id      Int         @id @default(autoincrement())
   name    String
   phone   String?
   address String?
-  ownerId Int
-  rating  Float   @default(0)
-  isEnabled Boolean  @default(true)
+  ownerId Int         @unique
+  rating  Float       @default(0)
+  isEnabled Boolean   @default(true)
   createdAt DateTime  @default(now())
 
   owner User @relation(fields: [ownerId], references: [id])

@@ -18,9 +18,12 @@ export interface UpdateRestaurantStatusDto {
 
 export interface OwnerRestaurantDto {
   id: number;
-  ownerId: number;
   name: string;
   phone: string | null;
   address: string | null;
-  status: RestaurantStatus;
+  rating: number;
+  isEnabled: boolean;
+  createdAt: Date;
 }
+
+
