@@ -43,3 +43,22 @@ export interface PaginatedOwnerMenuItemsDto {
   data: MenuItemDto[];
   pagination: PaginationMetaDto;
 }
+
+export interface OwnerMenuCategoryDto {
+  id: number;
+  restaurantId: number;
+  name: string;
+  isActive: boolean;
+}
+
+export interface GetOwnerCategoriesQueryDto extends PaginationQueryDto {
+  isActive?: boolean;
+}
+
+export interface PaginatedOwnerCategoriesDto {
+  data: OwnerMenuCategoryDto[];
+  pagination: PaginationMetaDto;
+}
+export interface MenuCategoryInputDto {
+  name: string;
+}

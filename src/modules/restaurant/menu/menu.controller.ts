@@ -6,7 +6,9 @@ import { CustomRequest } from "../../../common/tdos";
 import { MenuService } from "./menu.service";
 import {
   CreateMenuItemDto,
+  GetOwnerCategoriesQueryDto,
   GetOwnerMenuItemsQueryDto,
+  MenuCategoryInputDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
 } from "./menu.dto";
@@ -109,5 +111,41 @@ export class MenuController {
     await this.menuService.deleteMenuItem(ownerId, restaurantId, menuItemId);
 
     res.status(StatusCodes.NO_CONTENT).send();
+  });
+
+  getOwnerCategories = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const ownerId = this.getOwnerId(req);
+      const restaurantId = Number(req.params.restaurantId);
+      const query = req.query as unknown as GetOwnerCategoriesQueryDto;
+
+      const result = await this.menuService.getOwnerCategories(
+        ownerId,
+        restaurantId,
+        query,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Owner categories fetched successfully",
+        data: result.data,
+        pagination: result.pagination,
+      });
+    },
+  );
+  createCategory = asyncHandler(async (req: CustomRequest, res: Response) => {
+    const ownerId = this.getOwnerId(req);
+    const restaurantId = Number(req.params.restaurantId);
+    const dto: MenuCategoryInputDto = req.body;
+
+    const category = await this.menuService.createCategory(
+      ownerId,
+      restaurantId,
+      dto,
+    );
+
+    res.status(StatusCodes.CREATED).json({
+      message: "Menu category created successfully",
+      data: category,
+    });
   });
 }

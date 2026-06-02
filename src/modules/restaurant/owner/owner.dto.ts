@@ -25,5 +25,3 @@ export interface OwnerRestaurantDto {
   isEnabled: boolean;
   createdAt: Date;
 }
-
-

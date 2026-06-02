@@ -2,7 +2,9 @@ import prisma from "../../../lib/prisma";
 import type { Prisma } from "../../../generated/prisma/client";
 import {
   CreateMenuItemDto,
+  GetOwnerCategoriesQueryDto,
   GetOwnerMenuItemsQueryDto,
+  MenuCategoryInputDto,
   MenuItemDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
@@ -228,6 +230,59 @@ export class MenuRepository {
       },
       data: {
         deletedAt: new Date(),
+      },
+    });
+  }
+
+  async getOwnerCategories(
+    restaurantId: number,
+    query: GetOwnerCategoriesQueryDto,
+  ) {
+    const where: Prisma.MenuCategoryWhereInput = {
+      restaurantId,
+      ...(query.isActive !== undefined && {
+        isActive: query.isActive,
+      }),
+    };
+    const skip = (query.page - 1) * query.limit;
+
+    const countQuery = prisma.menuCategory.count({
+      where,
+    });
+    const categoriesQuery = prisma.menuCategory.findMany({
+      where,
+      skip,
+      take: query.limit,
+      select: {
+        id: true,
+        restaurantId: true,
+        name: true,
+        isActive: true,
+      },
+    });
+
+    const [total, categories] = await prisma.$transaction([
+      countQuery,
+      categoriesQuery,
+    ]);
+
+    return {
+      total,
+      categories,
+    };
+  }
+  async createCategory(restaurantId: number, dto: MenuCategoryInputDto) {
+    return await prisma.menuCategory.create({
+      data: {
+        restaurantId,
+        name: dto.name,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        restaurantId: true,
+        name: true,
+        isActive: true,
       },
     });
   }

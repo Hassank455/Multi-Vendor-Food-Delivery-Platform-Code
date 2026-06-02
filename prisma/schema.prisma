@@ -98,6 +98,8 @@ model MenuCategory {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
   menuItems MenuItem[]
+
+  @@unique([restaurantId, name])
 }
 
 model Review {

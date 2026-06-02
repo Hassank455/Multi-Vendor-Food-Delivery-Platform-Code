@@ -35,7 +35,7 @@ export class OwnerController {
     });
   });
 
-  getMyRestaurant = asyncHandler(async (req: CustomRequest, res: Response) => {
+  getRestaurant = asyncHandler(async (req: CustomRequest, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurant = await this.ownerService.findOwnerRestaurant(ownerId);
 

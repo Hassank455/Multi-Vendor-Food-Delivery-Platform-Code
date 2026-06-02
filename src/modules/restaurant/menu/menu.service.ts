@@ -2,8 +2,12 @@ import { buildPaginationMeta } from "../../../common/pagination";
 import { MenuRepository } from "./menu.repository";
 import {
   CreateMenuItemDto,
+  GetOwnerCategoriesQueryDto,
   GetOwnerMenuItemsQueryDto,
+  MenuCategoryInputDto,
   MenuItemDto,
+  OwnerMenuCategoryDto,
+  PaginatedOwnerCategoriesDto,
   PaginatedOwnerMenuItemsDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
@@ -175,5 +179,55 @@ export class MenuService {
     }
 
     await this.menuRepository.softDeleteMenuItem(menuItemId);
+  }
+  async getOwnerCategories(
+    ownerId: number,
+    restaurantId: number,
+    query: GetOwnerCategoriesQueryDto,
+  ): Promise<PaginatedOwnerCategoriesDto> {
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
+      restaurantId,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const { total, categories } = await this.menuRepository.getOwnerCategories(
+      restaurantId,
+      query,
+    );
+
+    return {
+      data: categories.map((category) => ({
+        id: category.id,
+        restaurantId: category.restaurantId,
+        name: category.name,
+        isActive: category.isActive,
+      })),
+      pagination: buildPaginationMeta(query.page, query.limit, total),
+    };
+  }
+  async createCategory(
+    ownerId: number,
+    restaurantId: number,
+    dto: MenuCategoryInputDto,
+  ): Promise<OwnerMenuCategoryDto> {
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
+      restaurantId,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const category = await this.menuRepository.createCategory(
+      restaurantId,
+      dto,
+    );
+
+    return category;
   }
 }

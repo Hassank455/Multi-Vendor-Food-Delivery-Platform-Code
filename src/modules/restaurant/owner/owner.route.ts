@@ -13,7 +13,7 @@ router.post(
   ownerController.createRestaurant,
 );
 
-router.get("/me", isAuth, ownerController.getMyRestaurant);
+router.get("/me", isAuth, ownerController.getRestaurant);
 
 router.patch(
   "/:restaurantId",

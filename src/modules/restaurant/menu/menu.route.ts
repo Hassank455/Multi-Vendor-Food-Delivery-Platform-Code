@@ -41,4 +41,18 @@ router.delete(
   menuController.deleteMenuItem,
 );
 
+router.get(
+  "/:restaurantId/categories",
+  isAuth,
+  validate(menuValidators.getOwnerCategoriesSchema),
+  menuController.getOwnerCategories,
+);
+
+router.post(
+  "/:restaurantId/categories",
+  isAuth,
+  validate(menuValidators.menuCategorySchema),
+  menuController.createCategory,
+);
+
 export default router;
