@@ -1,12 +1,106 @@
 import * as z from "zod";
-import { paginationQuerySchema } from "../../../common/pagination";
+import { paginationQuerySchema } from "../../common/pagination";
 
 const requiredText = (max: number) => z.string().trim().min(1).max(max);
+
+const optionalNullableText = (max: number) =>
+  z.preprocess((value) => {
+    if (value == null) {
+      return value;
+    }
+
+    if (typeof value === "string" && value.trim() === "") {
+      return null;
+    }
+
+    return value;
+  }, z.string().trim().max(max).nullable().optional());
 
 const booleanFromString = z
   .enum(["true", "false"])
   .transform((value) => value === "true");
 
+// catalog schemas
+export const getRestaurantsSchema = z.object({
+  query: paginationQuerySchema.extend({
+    q: z.string().trim().min(1).max(255).optional(),
+  }),
+});
+
+export const getRestaurantByIdSchema = z.object({
+  params: z.object({
+    restaurantId: z.coerce.number().int().positive(),
+  }),
+});
+
+export const getRestaurantMenuSchema = z.object({
+  params: z.object({
+    restaurantId: z.coerce.number().int().positive(),
+  }),
+  query: paginationQuerySchema.extend({
+    q: z.string().trim().min(1).max(255).optional(),
+    categoryId: z.coerce.number().int().positive().optional(),
+  }),
+});
+
+export const getRecommendedRestaurantsSchema = z.object({
+  body: z.object({}).strict(),
+  params: z.object({}).strict(),
+  query: paginationQuerySchema,
+});
+
+export const getTopRatedRestaurantsSchema = z.object({
+  query: paginationQuerySchema.extend({
+    q: z.string().trim().min(1).max(255).optional(),
+  }),
+});
+
+// owner schemas
+export const createRestaurantSchema = z.object({
+  body: z.object({
+    name: requiredText(255),
+    phone: optionalNullableText(50),
+    address: optionalNullableText(255),
+  }),
+});
+
+export const getMyRestaurantSchema = z.object({
+  body: z.object({}).passthrough(),
+  params: z.object({}).passthrough(),
+  query: z.object({}).passthrough(),
+});
+
+export const updateRestaurantSchema = z.object({
+  params: z.object({
+    restaurantId: z.coerce.number().int().positive(),
+  }),
+  body: z
+    .object({
+      name: requiredText(255).optional(),
+      phone: optionalNullableText(50),
+      address: optionalNullableText(255),
+    })
+    .refine(
+      (body) =>
+        [body.name, body.phone, body.address].some(
+          (value) => value !== undefined,
+        ),
+      {
+        message: "At least one field must be provided for update",
+      },
+    ),
+});
+
+export const updateRestaurantStatusSchema = z.object({
+  params: z.object({
+    restaurantId: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    isEnabled: z.boolean(),
+  }),
+});
+
+// menu item schemas
 export const createMenuItemSchema = z.object({
   params: z.object({
     restaurantId: z.coerce.number().int().positive(),
@@ -69,6 +163,7 @@ export const deleteMenuItemSchema = z.object({
   }),
 });
 
+// menu category schemas
 export const getOwnerCategoriesSchema = z.object({
   body: z.object({}).strict(),
   params: z.object({
@@ -78,7 +173,8 @@ export const getOwnerCategoriesSchema = z.object({
     isActive: booleanFromString.optional(),
   }),
 });
-export const menuCategorySchema = z.object({
+
+export const createMenuCategorySchema = z.object({
   params: z.object({
     restaurantId: z.coerce.number().int().positive(),
   }),
@@ -96,6 +192,7 @@ export const updateMenuCategorySchema = z.object({
     name: requiredText(255),
   }),
 });
+
 export const updateMenuCategoryStatusSchema = z.object({
   params: z.object({
     restaurantId: z.coerce.number().int().positive(),

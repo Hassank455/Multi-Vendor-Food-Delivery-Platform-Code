@@ -1,12 +1,12 @@
 import { buildPaginationMeta } from "../../../common/pagination";
-import { CatalogRepository } from "./catalog.repository";
+import { CatalogRepository } from "../repos/catalog.repo";
 import {
   GetRestaurantsQueryDto,
   PaginatedRestaurantMenuItemsDto,
   PaginatedRestaurantsDto,
   RestaurantCatalogItemDto,
   SearchMenuItemsQueryDto,
-} from "./catalog.dto";
+} from "../restaurant.dto";
 import { NotFoundError } from "../../../errors";
 
 export class CatalogService {
@@ -35,6 +35,7 @@ export class CatalogService {
       pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
+
   async getRecommendedRestaurants(
     query: GetRestaurantsQueryDto,
   ): Promise<PaginatedRestaurantsDto> {
@@ -56,6 +57,7 @@ export class CatalogService {
     if (!restaurant) {
       throw new NotFoundError("Restaurant not found");
     }
+
     return restaurant;
   }
 

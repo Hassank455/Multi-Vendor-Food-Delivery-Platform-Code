@@ -1,12 +1,12 @@
-import { OwnerController } from "./owner/owner.controller";
-import { OwnerRepository } from "./owner/owner.repository";
-import { OwnerService } from "./owner/owner.service";
-import { MenuController } from "./menu/menu.controller";
-import { MenuRepository } from "./menu/menu.repository";
-import { MenuService } from "./menu/menu.service";
-import { CatalogController } from "./catalog/catalog.controller";
-import { CatalogRepository } from "./catalog/catalog.repository";
-import { CatalogService } from "./catalog/catalog.service";
+import { OwnerController } from "./controllers/owner.controller";
+import { OwnerRepository } from "./repos/owner.repo";
+import { OwnerService } from "./services/owner.service";
+import { MenuController } from "./controllers/menu.controller";
+import { MenuRepository } from "./repos/menu.repo";
+import { MenuService } from "./services/menu.service";
+import { CatalogController } from "./controllers/catalog.controller";
+import { CatalogRepository } from "./repos/catalog.repo";
+import { CatalogService } from "./services/catalog.service";
 
 const ownerRepository = new OwnerRepository();
 const ownerService = new OwnerService(ownerRepository);

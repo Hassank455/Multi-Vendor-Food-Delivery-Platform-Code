@@ -9,7 +9,7 @@ import {
   UpdateMenuCategoryStatusDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
-} from "./menu.dto";
+} from "../restaurant.dto";
 
 export class MenuRepository {
   async createMenuItem(
@@ -40,6 +40,7 @@ export class MenuRepository {
         },
       },
     });
+
     return {
       id: menuItem.id,
       name: menuItem.name,
@@ -67,6 +68,7 @@ export class MenuRepository {
       },
     });
   }
+
   async getOwnerMenuItems(
     restaurantId: number,
     query: GetOwnerMenuItemsQueryDto,
@@ -182,6 +184,7 @@ export class MenuRepository {
       },
     });
   }
+
   async findMenuItemByRestaurantId(restaurantId: number, menuItemId: number) {
     return await prisma.menuItem.findFirst({
       where: {
@@ -223,6 +226,7 @@ export class MenuRepository {
       },
     });
   }
+
   async softDeleteMenuItem(menuItemId: number) {
     return await prisma.menuItem.updateMany({
       where: {
@@ -245,11 +249,13 @@ export class MenuRepository {
         isActive: query.isActive,
       }),
     };
+
     const skip = (query.page - 1) * query.limit;
 
     const countQuery = prisma.menuCategory.count({
       where,
     });
+
     const categoriesQuery = prisma.menuCategory.findMany({
       where,
       skip,
@@ -272,6 +278,7 @@ export class MenuRepository {
       categories,
     };
   }
+
   async createCategory(restaurantId: number, dto: MenuCategoryInputDto) {
     return await prisma.menuCategory.create({
       data: {

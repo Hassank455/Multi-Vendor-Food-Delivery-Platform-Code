@@ -1,5 +1,5 @@
 import { buildPaginationMeta } from "../../../common/pagination";
-import { MenuRepository } from "./menu.repository";
+import { MenuRepository } from "../repos/menu.repo";
 import {
   CreateMenuItemDto,
   GetOwnerCategoriesQueryDto,
@@ -12,7 +12,7 @@ import {
   UpdateMenuCategoryStatusDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
-} from "./menu.dto";
+} from "../restaurant.dto";
 import { NotFoundError } from "../../../errors";
 
 export class MenuService {
@@ -62,10 +62,12 @@ export class MenuService {
     if (!restaurant) {
       throw new NotFoundError("Restaurant not found");
     }
+
     const { total, menuItems } = await this.menuRepository.getOwnerMenuItems(
       restaurantId,
       query,
     );
+
     return {
       data: menuItems,
       pagination: buildPaginationMeta(query.page, query.limit, total),
@@ -181,6 +183,7 @@ export class MenuService {
 
     await this.menuRepository.softDeleteMenuItem(menuItemId);
   }
+
   async getOwnerCategories(
     ownerId: number,
     restaurantId: number,
@@ -210,6 +213,7 @@ export class MenuService {
       pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
+
   async createCategory(
     ownerId: number,
     restaurantId: number,

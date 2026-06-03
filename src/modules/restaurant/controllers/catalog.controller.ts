@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../../utils/asyncHandler";
-import { CatalogService } from "./catalog.service";
-import { GetRestaurantsQueryDto, SearchMenuItemsQueryDto } from "./catalog.dto";
+import { CatalogService } from "../services/catalog.service";
+import {
+  GetRestaurantsQueryDto,
+  SearchMenuItemsQueryDto,
+} from "../restaurant.dto";
 
 export class CatalogController {
   constructor(private catalogService: CatalogService) {}
@@ -54,6 +57,7 @@ export class CatalogController {
       pagination: result.pagination,
     });
   });
+
   getRecommendedRestaurants = asyncHandler(
     async (req: Request, res: Response) => {
       const query = req.query as unknown as GetRestaurantsQueryDto;

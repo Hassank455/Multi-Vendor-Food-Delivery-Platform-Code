@@ -1,10 +1,10 @@
-import { OwnerRepository } from "./owner.repository";
+import { OwnerRepository } from "../repos/owner.repo";
 import {
   CreateRestaurantDto,
   OwnerRestaurantDto,
   UpdateRestaurantDto,
   UpdateRestaurantStatusDto,
-} from "./owner.dto";
+} from "../restaurant.dto";
 import { NotFoundError } from "../../../errors";
 
 export class OwnerService {
@@ -28,8 +28,7 @@ export class OwnerService {
   }
 
   async findOwnerRestaurant(ownerId: number): Promise<OwnerRestaurantDto> {
-    const restaurant =
-      await this.ownerRepository.findOwnerRestaurant(ownerId);
+    const restaurant = await this.ownerRepository.findOwnerRestaurant(ownerId);
 
     if (!restaurant) {
       throw new NotFoundError("Restaurant not found");

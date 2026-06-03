@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../../utils/asyncHandler";
 import { ForbiddenError } from "../../../errors";
 import { CustomRequest } from "../../../common/tdos";
-import { MenuService } from "./menu.service";
+import { MenuService } from "../services/menu.service";
 import {
   CreateMenuItemDto,
   GetOwnerCategoriesQueryDto,
@@ -12,7 +12,7 @@ import {
   UpdateMenuCategoryStatusDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
-} from "./menu.dto";
+} from "../restaurant.dto";
 
 export class MenuController {
   constructor(private menuService: MenuService) {}
@@ -133,6 +133,7 @@ export class MenuController {
       });
     },
   );
+
   createCategory = asyncHandler(async (req: CustomRequest, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);

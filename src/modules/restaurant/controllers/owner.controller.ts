@@ -3,12 +3,12 @@ import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../../utils/asyncHandler";
 import { ForbiddenError } from "../../../errors";
 import { CustomRequest } from "../../../common/tdos";
-import { OwnerService } from "./owner.service";
+import { OwnerService } from "../services/owner.service";
 import {
   CreateRestaurantDto,
   UpdateRestaurantDto,
   UpdateRestaurantStatusDto,
-} from "./owner.dto";
+} from "../restaurant.dto";
 
 export class OwnerController {
   constructor(private ownerService: OwnerService) {}

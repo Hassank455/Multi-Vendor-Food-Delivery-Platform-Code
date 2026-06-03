@@ -1,6 +1,9 @@
 import prisma from "../../../lib/prisma";
 import type { Prisma } from "../../../generated/prisma/client";
-import { GetRestaurantsQueryDto, SearchMenuItemsQueryDto } from "./catalog.dto";
+import {
+  GetRestaurantsQueryDto,
+  SearchMenuItemsQueryDto,
+} from "../restaurant.dto";
 
 type RestaurantListMode = "default" | "top-rated" | "recommended";
 
