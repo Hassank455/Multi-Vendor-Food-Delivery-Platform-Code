@@ -62,3 +62,6 @@ export interface PaginatedOwnerCategoriesDto {
 export interface MenuCategoryInputDto {
   name: string;
 }
+export interface UpdateMenuCategoryStatusDto {
+  isActive: boolean;
+}

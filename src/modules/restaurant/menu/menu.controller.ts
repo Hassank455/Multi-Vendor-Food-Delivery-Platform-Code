@@ -9,6 +9,7 @@ import {
   GetOwnerCategoriesQueryDto,
   GetOwnerMenuItemsQueryDto,
   MenuCategoryInputDto,
+  UpdateMenuCategoryStatusDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
 } from "./menu.dto";
@@ -148,4 +149,44 @@ export class MenuController {
       data: category,
     });
   });
+
+  updateCategory = asyncHandler(async (req: CustomRequest, res: Response) => {
+    const ownerId = this.getOwnerId(req);
+    const restaurantId = Number(req.params.restaurantId);
+    const categoryId = Number(req.params.categoryId);
+    const dto: MenuCategoryInputDto = req.body;
+
+    const category = await this.menuService.updateCategory(
+      ownerId,
+      restaurantId,
+      categoryId,
+      dto,
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Menu category updated successfully",
+      data: category,
+    });
+  });
+
+  updateCategoryStatus = asyncHandler(
+    async (req: CustomRequest, res: Response) => {
+      const ownerId = this.getOwnerId(req);
+      const restaurantId = Number(req.params.restaurantId);
+      const categoryId = Number(req.params.categoryId);
+      const dto: UpdateMenuCategoryStatusDto = req.body;
+
+      const category = await this.menuService.updateCategoryStatus(
+        ownerId,
+        restaurantId,
+        categoryId,
+        dto,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Menu category status updated successfully",
+        data: category,
+      });
+    },
+  );
 }

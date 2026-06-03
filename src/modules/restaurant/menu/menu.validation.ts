@@ -86,3 +86,22 @@ export const menuCategorySchema = z.object({
     name: requiredText(255),
   }),
 });
+
+export const updateMenuCategorySchema = z.object({
+  params: z.object({
+    restaurantId: z.coerce.number().int().positive(),
+    categoryId: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    name: requiredText(255),
+  }),
+});
+export const updateMenuCategoryStatusSchema = z.object({
+  params: z.object({
+    restaurantId: z.coerce.number().int().positive(),
+    categoryId: z.coerce.number().int().positive(),
+  }),
+  body: z.object({
+    isActive: z.boolean(),
+  }),
+});

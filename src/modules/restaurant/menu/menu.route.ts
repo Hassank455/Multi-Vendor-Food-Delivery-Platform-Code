@@ -55,4 +55,17 @@ router.post(
   menuController.createCategory,
 );
 
+router.patch(
+  "/:restaurantId/categories/:categoryId",
+  isAuth,
+  validate(menuValidators.updateMenuCategorySchema),
+  menuController.updateCategory,
+);
+
+router.patch(
+  "/:restaurantId/categories/:categoryId/status",
+  isAuth,
+  validate(menuValidators.updateMenuCategoryStatusSchema),
+  menuController.updateCategoryStatus,
+);
 export default router;

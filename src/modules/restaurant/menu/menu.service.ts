@@ -9,6 +9,7 @@ import {
   OwnerMenuCategoryDto,
   PaginatedOwnerCategoriesDto,
   PaginatedOwnerMenuItemsDto,
+  UpdateMenuCategoryStatusDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
 } from "./menu.dto";
@@ -229,5 +230,71 @@ export class MenuService {
     );
 
     return category;
+  }
+
+  async updateCategory(
+    ownerId: number,
+    restaurantId: number,
+    categoryId: number,
+    dto: MenuCategoryInputDto,
+  ): Promise<OwnerMenuCategoryDto> {
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
+      restaurantId,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const existingCategory =
+      await this.menuRepository.findCategoryByIdAndRestaurantId(
+        restaurantId,
+        categoryId,
+      );
+
+    if (!existingCategory) {
+      throw new NotFoundError("Menu category not found");
+    }
+
+    const updatedCategory = await this.menuRepository.updateCategory(
+      categoryId,
+      dto,
+    );
+
+    return updatedCategory;
+  }
+
+  async updateCategoryStatus(
+    ownerId: number,
+    restaurantId: number,
+    categoryId: number,
+    dto: UpdateMenuCategoryStatusDto,
+  ): Promise<OwnerMenuCategoryDto> {
+    const restaurant = await this.menuRepository.findRestaurantByOwnerId(
+      ownerId,
+      restaurantId,
+    );
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant not found");
+    }
+
+    const existingCategory =
+      await this.menuRepository.findCategoryByIdAndRestaurantId(
+        restaurantId,
+        categoryId,
+      );
+
+    if (!existingCategory) {
+      throw new NotFoundError("Menu category not found");
+    }
+
+    const updatedCategory = await this.menuRepository.updateCategoryStatus(
+      categoryId,
+      dto,
+    );
+
+    return updatedCategory;
   }
 }

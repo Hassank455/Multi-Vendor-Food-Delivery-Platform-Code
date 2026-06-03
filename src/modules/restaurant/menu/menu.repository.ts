@@ -6,6 +6,7 @@ import {
   GetOwnerMenuItemsQueryDto,
   MenuCategoryInputDto,
   MenuItemDto,
+  UpdateMenuCategoryStatusDto,
   UpdateMenuItemDto,
   UpdateMenuItemStatusDto,
 } from "./menu.dto";
@@ -277,6 +278,61 @@ export class MenuRepository {
         restaurantId,
         name: dto.name,
         isActive: true,
+      },
+      select: {
+        id: true,
+        restaurantId: true,
+        name: true,
+        isActive: true,
+      },
+    });
+  }
+
+  async findCategoryByIdAndRestaurantId(
+    restaurantId: number,
+    categoryId: number,
+  ) {
+    return await prisma.menuCategory.findFirst({
+      where: {
+        id: categoryId,
+        restaurantId,
+      },
+      select: {
+        id: true,
+        restaurantId: true,
+        name: true,
+        isActive: true,
+      },
+    });
+  }
+
+  async updateCategory(categoryId: number, dto: MenuCategoryInputDto) {
+    return await prisma.menuCategory.update({
+      where: {
+        id: categoryId,
+      },
+      data: {
+        name: dto.name,
+      },
+      select: {
+        id: true,
+        restaurantId: true,
+        name: true,
+        isActive: true,
+      },
+    });
+  }
+
+  async updateCategoryStatus(
+    categoryId: number,
+    dto: UpdateMenuCategoryStatusDto,
+  ) {
+    return await prisma.menuCategory.update({
+      where: {
+        id: categoryId,
+      },
+      data: {
+        isActive: dto.isActive,
       },
       select: {
         id: true,
