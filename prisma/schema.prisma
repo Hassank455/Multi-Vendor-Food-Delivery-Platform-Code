@@ -54,12 +54,14 @@ model CustomerAddress {
 }
 
 model Restaurant {
-  id      Int     @id @default(autoincrement())
+  id      Int         @id @default(autoincrement())
   name    String
   phone   String?
   address String?
-  ownerId Int
-  rating  Float   @default(0)
+  ownerId Int         @unique
+  rating  Float       @default(0)
+  isEnabled Boolean   @default(true)
+  createdAt DateTime  @default(now())
 
   owner User @relation(fields: [ownerId], references: [id])
 
@@ -79,6 +81,7 @@ model MenuItem {
   categoryId   Int
   price        Float
   isAvailable  Boolean @default(true)
+  deletedAt    DateTime?
 
   restaurant Restaurant   @relation(fields: [restaurantId], references: [id])
   category   MenuCategory @relation(fields: [categoryId], references: [id])
@@ -95,6 +98,8 @@ model MenuCategory {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
   menuItems MenuItem[]
+
+  @@unique([restaurantId, name])
 }
 
 model Review {
