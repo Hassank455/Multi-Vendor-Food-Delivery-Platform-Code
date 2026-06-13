@@ -10,7 +10,7 @@ import prisma from "../lib/prisma";
 
 import { CustomRequest } from "../common/tdos";
 import { AppErrorImpl } from "../errors/customApiError";
-import { Role } from "../generated/prisma/client";
+import { RoleEnum } from "../generated/prisma/enums";
 
 // Temporary development-only switch.
 // Remove this helper and its usages once real customer auth/login is ready.
@@ -55,7 +55,7 @@ const authenticateActiveRestaurantOwnerById = async (
     where: {
       id: userId,
       deletedAt: null,
-      role: Role.RESTAURANT_OWNER,
+      role: RoleEnum.RESTAURANT_OWNER,
     },
     select: {
       id: true,

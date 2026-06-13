@@ -1,7 +1,8 @@
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, Role } from "../src/generated/prisma/client";
+import { PrismaClient } from "../src/generated/prisma/client";
+import { RoleEnum } from "../src/generated/prisma/enums";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Make sure the .env file is loaded.");
@@ -50,46 +51,79 @@ async function main() {
     where: { email: "owner@foodlify.demo" },
     update: {
       name: "Demo Restaurant Owner",
-      phone: "0599000001",
       password: passwordHash,
-      role: Role.RESTAURANT_OWNER,
+      role: RoleEnum.RESTAURANT_OWNER,
+      isActive: 1,
+      emailVerifiedAt: new Date(),
     },
     create: {
       name: "Demo Restaurant Owner",
       email: "owner@foodlify.demo",
-      phone: "0599000001",
       password: passwordHash,
-      role: Role.RESTAURANT_OWNER,
+      role: RoleEnum.RESTAURANT_OWNER,
+      isActive: 1,
+      emailVerifiedAt: new Date(),
     },
   });
 
-  const [customerOne, customerTwo] = await Promise.all([
-    prisma.customer.upsert({
+  const [customerUserOne, customerUserTwo] = await Promise.all([
+    prisma.user.upsert({
       where: { email: "customer1@foodlify.demo" },
       update: {
         name: "Demo Customer One",
-        phone: "0599000002",
         password: passwordHash,
+        role: RoleEnum.CUSTOMER,
+        isActive: 1,
+        emailVerifiedAt: new Date(),
       },
       create: {
         name: "Demo Customer One",
         email: "customer1@foodlify.demo",
-        phone: "0599000002",
         password: passwordHash,
+        role: RoleEnum.CUSTOMER,
+        isActive: 1,
+        emailVerifiedAt: new Date(),
       },
     }),
-    prisma.customer.upsert({
+    prisma.user.upsert({
       where: { email: "customer2@foodlify.demo" },
       update: {
         name: "Demo Customer Two",
-        phone: "0599000003",
         password: passwordHash,
+        role: RoleEnum.CUSTOMER,
+        isActive: 1,
+        emailVerifiedAt: new Date(),
       },
       create: {
         name: "Demo Customer Two",
         email: "customer2@foodlify.demo",
-        phone: "0599000003",
         password: passwordHash,
+        role: RoleEnum.CUSTOMER,
+        isActive: 1,
+        emailVerifiedAt: new Date(),
+      },
+    }),
+  ]);
+
+  const [customerOne, customerTwo] = await Promise.all([
+    prisma.customer.upsert({
+      where: { userId: customerUserOne.id },
+      update: {
+        phone: "0599000002",
+      },
+      create: {
+        userId: customerUserOne.id,
+        phone: "0599000002",
+      },
+    }),
+    prisma.customer.upsert({
+      where: { userId: customerUserTwo.id },
+      update: {
+        phone: "0599000003",
+      },
+      create: {
+        userId: customerUserTwo.id,
+        phone: "0599000003",
       },
     }),
   ]);
@@ -223,9 +257,11 @@ async function main() {
 
   console.log("Seed completed successfully.");
   console.log(`Owner email: ${owner.email}`);
-  console.log(`Customer emails: ${customerOne.email}, ${customerTwo.email}`);
   console.log(
-    `Customer address IDs: ${customerOneAddress.id} for ${customerOne.email}, ${customerTwoAddress.id} for ${customerTwo.email}`,
+    `Customer emails: ${customerUserOne.email}, ${customerUserTwo.email}`,
+  );
+  console.log(
+    `Customer address IDs: ${customerOneAddress.id} for ${customerUserOne.email}, ${customerTwoAddress.id} for ${customerUserTwo.email}`,
   );
   console.log(`Demo password: ${DEMO_PASSWORD}`);
   console.log(`Restaurant: ${restaurant.name}`);
