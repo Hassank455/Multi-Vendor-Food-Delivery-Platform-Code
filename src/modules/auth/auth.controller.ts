@@ -12,7 +12,8 @@ export class AuthController {
     const data = await this.authService.customerSignup(dto);
 
     res.status(StatusCodes.CREATED).json({
-      message: "Customer account created successfully",
+      message:
+        "Customer account created successfully. Please check your email for the verification code.",
       data,
     });
   });

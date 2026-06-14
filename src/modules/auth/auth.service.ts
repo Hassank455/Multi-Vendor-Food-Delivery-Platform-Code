@@ -1,13 +1,18 @@
 import { BadRequestError } from "../../errors";
 import { AuthCodePurpose } from "../../generated/prisma/enums";
 import prisma from "../../lib/prisma";
+import { MailService } from "../../services/mail.service";
 import { hashPassword } from "../../utils/password";
 import { CustomerSignupBodyDto, CustomerSignupResponseDto } from "./auth.dto";
+import { buildVerificationEmail } from "./auth.mail";
 import { AuthRepo } from "./auth.repo";
 import crypto from "crypto";
 
 export class AuthService {
-  constructor(private authRepo: AuthRepo) {}
+  constructor(
+    private authRepo: AuthRepo,
+    private mailService: MailService,
+  ) {}
   async customerSignup(
     dto: CustomerSignupBodyDto,
   ): Promise<CustomerSignupResponseDto> {
@@ -23,7 +28,7 @@ export class AuthService {
       hashPassword(dto.password),
       hashPassword(verificationCode),
     ]);
-    
+
     // Code expires in 10 minutes
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -52,13 +57,20 @@ export class AuthService {
       return { user, customer };
     });
 
+    const emailContent = buildVerificationEmail(dto.name, verificationCode);
+
+    await this.mailService.sendMail({
+      to: dto.email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+    });
+
     return {
       userId: result.user.id,
       customerId: result.customer.id,
       email: result.user.email,
       role: result.user.role,
-      verificationCode:
-        process.env.NODE_ENV === "production" ? undefined : verificationCode,
     };
   }
 }

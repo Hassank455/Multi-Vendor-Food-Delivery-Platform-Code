@@ -13,5 +13,4 @@ export interface CustomerSignupResponseDto {
   customerId: number;
   email: string;
   role: RoleEnum;
-  verificationCode?: string;
 }
