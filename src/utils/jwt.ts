@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { RoleEnum } from "../generated/prisma/browser";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 const JWT_REFRESH_SECRET =
@@ -7,7 +8,7 @@ const JWT_REFRESH_SECRET =
 export interface AccessTokenPayload {
   userId: number;
   customerId?: number;
-  role: string;
+  role: RoleEnum;
 }
 
 export function signAccess(payload: AccessTokenPayload): string {

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../utils/asyncHandler";
 import {
+  CustomerLoginBodyDto,
   CustomerSignupBodyDto,
   ResendVerificationCodeBodyDto,
   VerifyEmailBodyDto,
@@ -39,6 +40,16 @@ export class AuthController {
 
     res.status(StatusCodes.OK).json({
       message: "Verification code resent successfully",
+    });
+  });
+
+  customerLogin = asyncHandler(async (req: Request, res: Response) => {
+    const dto: CustomerLoginBodyDto = req.body;
+    const data = await this.authService.customerLogin(dto);
+
+    res.status(StatusCodes.OK).json({
+      message: "Customer logged in successfully",
+      data,
     });
   });
 }

@@ -135,4 +135,17 @@ export class AuthRepo {
       },
     });
   }
+
+  async findCustomerByUserId(userId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).customer.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        userId: true,
+        phone: true,
+        gender: true,
+        paymentPreference: true,
+      },
+    });
+  }
 }

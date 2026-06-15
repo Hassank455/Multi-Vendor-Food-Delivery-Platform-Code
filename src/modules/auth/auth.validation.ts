@@ -36,3 +36,14 @@ export const resendVerificationCodeSchema = z.object({
     })
     .strict(),
 });
+
+export const customerLoginSchema = z.object({
+  params: z.object({}).strict(),
+  query: z.object({}).strict(),
+  body: z
+    .object({
+      email: z.string().trim().email().max(255),
+      password: z.string().min(8).max(128),
+    })
+    .strict(),
+});

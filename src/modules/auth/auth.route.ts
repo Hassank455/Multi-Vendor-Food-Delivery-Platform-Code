@@ -30,4 +30,10 @@ router.post(
   authController.resendVerificationCode,
 );
 
+router.post(
+  "/customer/login",
+  validate(authValidators.customerLoginSchema),
+  authController.customerLogin,
+);
+
 export default router;

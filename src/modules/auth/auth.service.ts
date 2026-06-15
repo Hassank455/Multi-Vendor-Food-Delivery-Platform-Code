@@ -4,6 +4,8 @@ import prisma from "../../lib/prisma";
 import { MailService } from "../../services/mail.service";
 import { comparePassword, hashPassword } from "../../utils/password";
 import {
+  CustomerLoginBodyDto,
+  CustomerLoginResponseDto,
   CustomerSignupBodyDto,
   CustomerSignupResponseDto,
   ResendVerificationCodeBodyDto,
@@ -13,6 +15,7 @@ import {
 import { buildVerificationEmail } from "./auth.mail";
 import { AuthRepo } from "./auth.repo";
 import crypto from "crypto";
+import { signAccess } from "../../utils/jwt";
 
 export class AuthService {
   constructor(
@@ -140,6 +143,51 @@ export class AuthService {
     });
   }
 
+  async customerLogin(
+    dto: CustomerLoginBodyDto,
+  ): Promise<CustomerLoginResponseDto> {
+    const user = await this.authRepo.findUserByEmail(dto.email);
+
+    this.assertCustomerUserCanLogin(user);
+
+    const isPasswordValid = await comparePassword(dto.password, user!.password);
+
+    if (!isPasswordValid) {
+      throw new BadRequestError("Invalid email or password");
+    }
+
+    const customer = await this.authRepo.findCustomerByUserId(user!.id);
+
+    if (!customer) {
+      throw new BadRequestError("Customer profile not found");
+    }
+
+    const token = signAccess({
+      userId: user!.id,
+      customerId: customer.id,
+      role: user!.role,
+    });
+
+    return {
+      token,
+      user: {
+        id: user!.id,
+        name: user!.name,
+        email: user!.email,
+        role: user!.role,
+        emailVerifiedAt: user!.emailVerifiedAt,
+        isActive: user!.isActive,
+      },
+      customer: {
+        id: customer.id,
+        userId: customer.userId,
+        phone: customer.phone,
+        gender: customer.gender,
+        paymentPreference: customer.paymentPreference,
+      },
+    };
+  }
+
   private assertCustomerUserCanVerifyEmail(
     user: {
       id: number;
@@ -187,6 +235,33 @@ export class AuthService {
 
     if (authCode.expiresAt.getTime() < Date.now()) {
       throw new BadRequestError("Verification code has expired");
+    }
+  }
+  private assertCustomerUserCanLogin(
+    user: {
+      id: number;
+      name: string;
+      email: string;
+      password: string;
+      role: RoleEnum;
+      isActive: number;
+      emailVerifiedAt: Date | null;
+    } | null,
+  ) {
+    if (!user) {
+      throw new BadRequestError("Invalid email or password");
+    }
+
+    if (user.role !== RoleEnum.CUSTOMER) {
+      throw new BadRequestError("This account is not a customer account");
+    }
+
+    if (user.isActive !== 1) {
+      throw new BadRequestError("This account is inactive");
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new BadRequestError("Please verify your email before logging in");
     }
   }
 }
