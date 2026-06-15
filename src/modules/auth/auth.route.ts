@@ -18,4 +18,16 @@ router.post(
   authController.customerSignup,
 );
 
+router.post(
+  "/customer/verify-email",
+  validate(authValidators.verifyEmailSchema),
+  authController.verifyEmail,
+);
+
+router.post(
+  "/customer/resend-verification-code",
+  validate(authValidators.resendVerificationCodeSchema),
+  authController.resendVerificationCode,
+);
+
 export default router;

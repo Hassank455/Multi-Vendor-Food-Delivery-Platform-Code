@@ -1,9 +1,15 @@
 import { BadRequestError } from "../../errors";
-import { AuthCodePurpose } from "../../generated/prisma/enums";
+import { AuthCodePurpose, RoleEnum } from "../../generated/prisma/enums";
 import prisma from "../../lib/prisma";
 import { MailService } from "../../services/mail.service";
-import { hashPassword } from "../../utils/password";
-import { CustomerSignupBodyDto, CustomerSignupResponseDto } from "./auth.dto";
+import { comparePassword, hashPassword } from "../../utils/password";
+import {
+  CustomerSignupBodyDto,
+  CustomerSignupResponseDto,
+  ResendVerificationCodeBodyDto,
+  VerifyEmailBodyDto,
+  VerifyEmailResponseDto,
+} from "./auth.dto";
 import { buildVerificationEmail } from "./auth.mail";
 import { AuthRepo } from "./auth.repo";
 import crypto from "crypto";
@@ -72,5 +78,115 @@ export class AuthService {
       email: result.user.email,
       role: result.user.role,
     };
+  }
+  async verifyEmail(dto: VerifyEmailBodyDto): Promise<VerifyEmailResponseDto> {
+    const user = await this.authRepo.findUserByEmail(dto.email);
+
+    this.assertCustomerUserCanVerifyEmail(user);
+
+    const authCode = await this.authRepo.findLatestAuthCodeByUserIdAndPurpose(
+      user!.id,
+      AuthCodePurpose.EMAIL_VERIFICATION,
+    );
+
+    this.assertAuthCodeIsUsable(authCode);
+
+    const isCodeValid = await comparePassword(dto.code, authCode!.codeHash);
+
+    if (!isCodeValid) {
+      throw new BadRequestError("Invalid verification code");
+    }
+
+    const verifiedUser = await prisma.$transaction(async (tx) => {
+      const updatedUser = await this.authRepo.verifyUserEmail(user!.id, tx);
+
+      await this.authRepo.consumeAuthCode(authCode!.id, tx);
+
+      return updatedUser;
+    });
+
+    return {
+      userId: verifiedUser.id,
+      email: verifiedUser.email,
+      emailVerifiedAt: verifiedUser.emailVerifiedAt!,
+    };
+  }
+
+  async resendVerificationCode(
+    dto: ResendVerificationCodeBodyDto,
+  ): Promise<void> {
+    const user = await this.authRepo.findUserByEmail(dto.email);
+
+    this.assertCustomerUserCanVerifyEmail(user);
+
+    const verificationCode = crypto.randomInt(100000, 1000000).toString();
+    const codeHash = await hashPassword(verificationCode);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.authRepo.createAuthCode(
+      user!.id,
+      AuthCodePurpose.EMAIL_VERIFICATION,
+      codeHash,
+      expiresAt,
+    );
+
+    const emailContent = buildVerificationEmail(user!.name, verificationCode);
+
+    await this.mailService.sendMail({
+      to: user!.email,
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+    });
+  }
+
+  private assertCustomerUserCanVerifyEmail(
+    user: {
+      id: number;
+      name: string;
+      email: string;
+      password: string;
+      role: RoleEnum;
+      isActive: number;
+      emailVerifiedAt: Date | null;
+    } | null,
+  ) {
+    if (!user) {
+      throw new BadRequestError("Invalid verification request");
+    }
+
+    if (user.role !== RoleEnum.CUSTOMER) {
+      throw new BadRequestError("This account is not a customer account");
+    }
+
+    if (user.isActive !== 1) {
+      throw new BadRequestError("This account is inactive");
+    }
+
+    if (user.emailVerifiedAt) {
+      throw new BadRequestError("Email is already verified");
+    }
+  }
+
+  private assertAuthCodeIsUsable(
+    authCode: {
+      id: number;
+      codeHash: string;
+      expiresAt: Date;
+      consumedAt: Date | null;
+      createdAt: Date;
+    } | null,
+  ) {
+    if (!authCode) {
+      throw new BadRequestError("Verification code not found");
+    }
+
+    if (authCode.consumedAt) {
+      throw new BadRequestError("Verification code has already been used");
+    }
+
+    if (authCode.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestError("Verification code has expired");
+    }
   }
 }

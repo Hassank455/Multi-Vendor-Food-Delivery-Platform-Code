@@ -15,3 +15,24 @@ export const customerSignupSchema = z.object({
     })
     .strict(),
 });
+
+export const verifyEmailSchema = z.object({
+  params: z.object({}).strict(),
+  query: z.object({}).strict(),
+  body: z
+    .object({
+      email: z.string().trim().email().max(255),
+      code: z.string().trim().length(6),
+    })
+    .strict(),
+});
+
+export const resendVerificationCodeSchema = z.object({
+  params: z.object({}).strict(),
+  query: z.object({}).strict(),
+  body: z
+    .object({
+      email: z.string().trim().email().max(255),
+    })
+    .strict(),
+});

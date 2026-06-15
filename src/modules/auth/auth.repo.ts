@@ -14,7 +14,12 @@ export class AuthRepo {
       where: { email },
       select: {
         id: true,
+        name: true,
         email: true,
+        role: true,
+        password: true,
+        isActive: true,
+        emailVerifiedAt: true,
       },
     });
   }
@@ -75,6 +80,55 @@ export class AuthRepo {
         purpose: purpose,
         codeHash: codeHash,
         expiresAt: expiresAt,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  async findLatestAuthCodeByUserIdAndPurpose(
+    userId: number,
+    purpose: AuthCodePurpose,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).authCode.findFirst({
+      where: {
+        userId,
+        purpose,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        codeHash: true,
+        expiresAt: true,
+        consumedAt: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  async verifyUserEmail(userId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).user.update({
+      where: { id: userId },
+      data: {
+        emailVerifiedAt: new Date(),
+      },
+      select: {
+        id: true,
+        email: true,
+        emailVerifiedAt: true,
+      },
+    });
+  }
+
+  async consumeAuthCode(authCodeId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).authCode.update({
+      where: { id: authCodeId },
+      data: {
+        consumedAt: new Date(),
       },
       select: {
         id: true,
