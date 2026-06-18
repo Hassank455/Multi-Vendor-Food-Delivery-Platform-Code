@@ -36,7 +36,8 @@ export interface CustomerLoginBodyDto {
 }
 
 export interface CustomerLoginResponseDto {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
     id: number;
     name: string;

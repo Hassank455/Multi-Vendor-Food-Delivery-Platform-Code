@@ -159,4 +159,39 @@ export class AuthRepo {
       },
     });
   }
+
+  // ------------------------ Session ------------------------
+  async createRefreshToken(
+    userId: number,
+    expiresAt: Date,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).refreshToken.create({
+      data: {
+        userId,
+        expiresAt,
+      },
+      select: {
+        id: true,
+        userId: true,
+        expiresAt: true,
+      },
+    });
+  }
+
+  async updateRefreshTokenHash(
+    refreshTokenId: number,
+    refreshTokenHash: string,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).refreshToken.update({
+      where: { id: refreshTokenId },
+      data: {
+        refreshTokenHash,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
 }

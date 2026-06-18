@@ -80,7 +80,7 @@ model User {
   customer   Customer?
   restaurant Restaurant?
   authCodes AuthCode[]
-  sessions UserSession[]
+  refreshTokens RefreshToken[]
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -118,17 +118,19 @@ model AuthCode {
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
-model UserSession {
-  id               Int      @id @default(autoincrement())     // This is the sessionId that will be stored inside the refresh token.
-  userId           Int                                        // The owner of the session.
-  refreshTokenHash String                                     // We store a hash of the refresh token, not the actual token value.
-  expiresAt        DateTime                                   // The date and time when the session expires.
-  revokedAt        DateTime?                                  // Set when the session is revoked, such as during logout or manual revocation.
-  createdAt        DateTime @default(now())                   // The date and time when the session was created.
+model RefreshToken {
+  id               Int      @id @default(autoincrement())     // Unique refresh token record ID used inside the refresh token payload
+  userId           Int                                        // The user who owns this refresh token
+  refreshTokenHash String?                                    // Hashed refresh token value, stored after the token is issued
+  expiresAt        DateTime                                   // When this refresh token expires
+  revokedAt        DateTime?                                  // Set when this refresh token is revoked or invalidated
+  createdAt        DateTime @default(now())                   // When this refresh token record was created
 
   user User @relation(fields: [userId], references: [id])
 
-  @@map("user_sessions")
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────

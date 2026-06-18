@@ -39,7 +39,7 @@ export type AccessTokenPayload =
 
 export interface RefreshTokenPayload {
   userId: number;
-  sessionId: number;
+  refreshTokenId: number;
 }
 
 // Used for access tokens

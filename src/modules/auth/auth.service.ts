@@ -19,7 +19,7 @@ import {
 import { buildVerificationEmail } from "./auth.mail";
 import { AuthRepo } from "./auth.repo";
 import crypto from "crypto";
-import { signAccess } from "../../utils/jwt";
+import { signAccess, signRefresh } from "../../utils/jwt";
 
 export class AuthService {
   constructor(
@@ -160,14 +160,45 @@ export class AuthService {
       throw new BadRequestError("Invalid email or password");
     }
 
-    const token = signAccess({
-      userId: user!.id,
-      customerId: user!.customer!.id,
-      role: user!.role,
+    // expires in 7 days
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    );
+
+    const result = await prisma.$transaction(async (tx) => {
+      const refreshTokenRecord = await this.authRepo.createRefreshToken(
+        user!.id,
+        refreshTokenExpiresAt,
+        tx,
+      );
+
+      const accessToken = signAccess({
+        customerId: user!.customer!.id,
+        role: RoleEnum.CUSTOMER,
+      });
+
+      const refreshToken = signRefresh({
+        userId: user!.id,
+        refreshTokenId: refreshTokenRecord.id,
+      });
+
+      const refreshTokenHash = this.hashRefreshToken(refreshToken);
+
+      await this.authRepo.updateRefreshTokenHash(
+        refreshTokenRecord.id,
+        refreshTokenHash,
+        tx,
+      );
+
+      return {
+        accessToken,
+        refreshToken,
+      };
     });
 
     return {
-      token,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       user: {
         id: user!.id,
         name: user!.name,
@@ -184,6 +215,10 @@ export class AuthService {
         paymentPreference: user!.customer!.paymentPreference,
       },
     };
+  }
+
+  private hashRefreshToken(token: string): string {
+    return crypto.createHash("sha256").update(token).digest("hex");
   }
 
   private assertCustomerUserCanVerifyEmail(
