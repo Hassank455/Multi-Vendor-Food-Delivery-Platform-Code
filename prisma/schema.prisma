@@ -80,7 +80,10 @@ model User {
   customer   Customer?
   restaurant Restaurant?
   authCodes AuthCode[]
+  sessions UserSession[]
 }
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Customer {
   id        Int       @id @default(autoincrement())
@@ -97,6 +100,8 @@ model Customer {
   customerAddresses CustomerAddress[]
 }
 
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
 // Stores temporary auth codes for email verification and password reset.
 // Codes expire after a short time and are marked as consumed once used.
 model AuthCode {
@@ -110,6 +115,23 @@ model AuthCode {
 
   user User @relation(fields: [userId], references: [id])
 }
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model UserSession {
+  id               Int      @id @default(autoincrement())     // This is the sessionId that will be stored inside the refresh token.
+  userId           Int                                        // The owner of the session.
+  refreshTokenHash String                                     // We store a hash of the refresh token, not the actual token value.
+  expiresAt        DateTime                                   // The date and time when the session expires.
+  revokedAt        DateTime?                                  // Set when the session is revoked, such as during logout or manual revocation.
+  createdAt        DateTime @default(now())                   // The date and time when the session was created.
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_sessions")
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model CustomerAddress {
   id          Int     @id @default(autoincrement())

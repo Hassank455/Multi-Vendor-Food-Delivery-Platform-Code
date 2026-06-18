@@ -136,15 +136,26 @@ export class AuthRepo {
     });
   }
 
-  async findCustomerByUserId(userId: number, tx?: PrismaTransaction) {
-    return await this.db(tx).customer.findUnique({
-      where: { userId },
+  async findCustomerLoginContextByEmail(email: string, tx?: PrismaTransaction) {
+    return await this.db(tx).user.findUnique({
+      where: { email },
       select: {
         id: true,
-        userId: true,
-        phone: true,
-        gender: true,
-        paymentPreference: true,
+        name: true,
+        email: true,
+        password: true,
+        role: true,
+        isActive: true,
+        emailVerifiedAt: true,
+        customer: {
+          select: {
+            id: true,
+            userId: true,
+            phone: true,
+            gender: true,
+            paymentPreference: true,
+          },
+        },
       },
     });
   }

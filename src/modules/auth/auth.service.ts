@@ -1,5 +1,9 @@
 import { BadRequestError } from "../../errors";
-import { AuthCodePurpose, RoleEnum } from "../../generated/prisma/enums";
+import {
+  AuthCodePurpose,
+  PaymentMethod,
+  RoleEnum,
+} from "../../generated/prisma/enums";
 import prisma from "../../lib/prisma";
 import { MailService } from "../../services/mail.service";
 import { comparePassword, hashPassword } from "../../utils/password";
@@ -146,7 +150,7 @@ export class AuthService {
   async customerLogin(
     dto: CustomerLoginBodyDto,
   ): Promise<CustomerLoginResponseDto> {
-    const user = await this.authRepo.findUserByEmail(dto.email);
+    const user = await this.authRepo.findCustomerLoginContextByEmail(dto.email);
 
     this.assertCustomerUserCanLogin(user);
 
@@ -156,15 +160,9 @@ export class AuthService {
       throw new BadRequestError("Invalid email or password");
     }
 
-    const customer = await this.authRepo.findCustomerByUserId(user!.id);
-
-    if (!customer) {
-      throw new BadRequestError("Customer profile not found");
-    }
-
     const token = signAccess({
       userId: user!.id,
-      customerId: customer.id,
+      customerId: user!.customer!.id,
       role: user!.role,
     });
 
@@ -179,11 +177,11 @@ export class AuthService {
         isActive: user!.isActive,
       },
       customer: {
-        id: customer.id,
-        userId: customer.userId,
-        phone: customer.phone,
-        gender: customer.gender,
-        paymentPreference: customer.paymentPreference,
+        id: user!.customer!.id,
+        userId: user!.customer!.userId,
+        phone: user!.customer!.phone,
+        gender: user!.customer!.gender,
+        paymentPreference: user!.customer!.paymentPreference,
       },
     };
   }
@@ -246,6 +244,13 @@ export class AuthService {
       role: RoleEnum;
       isActive: number;
       emailVerifiedAt: Date | null;
+      customer: {
+        id: number;
+        userId: number;
+        phone: string;
+        gender: string | null;
+        paymentPreference: PaymentMethod | null;
+      } | null;
     } | null,
   ) {
     if (!user) {
@@ -262,6 +267,10 @@ export class AuthService {
 
     if (!user.emailVerifiedAt) {
       throw new BadRequestError("Please verify your email before logging in");
+    }
+
+    if (!user.customer) {
+      throw new BadRequestError("Customer profile not found");
     }
   }
 }
