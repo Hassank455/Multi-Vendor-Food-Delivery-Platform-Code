@@ -54,3 +54,15 @@ export interface CustomerLoginResponseDto {
     paymentPreference: PaymentMethod | null;
   };
 }
+
+export interface RefreshCustomerTokenBodyDto {
+  refreshToken: string;
+}
+
+export interface RefreshCustomerTokenResponseDto {
+  accessToken: string;
+  refreshToken: string;
+}
+export interface LogoutCustomerBodyDto {
+  refreshToken: string;
+}

@@ -1,7 +1,11 @@
 import * as z from "zod";
 
 const requiredText = (max: number) => z.string().trim().min(1).max(max);
-
+const refreshTokenBodySchema = z
+  .object({
+    refreshToken: z.string().trim().min(1),
+  })
+  .strict();
 export const customerSignupSchema = z.object({
   params: z.object({}).strict(),
   query: z.object({}).strict(),
@@ -46,4 +50,16 @@ export const customerLoginSchema = z.object({
       password: z.string().min(8).max(128),
     })
     .strict(),
+});
+
+export const refreshCustomerTokenSchema = z.object({
+  params: z.object({}).strict(),
+  query: z.object({}).strict(),
+  body: refreshTokenBodySchema,
+});
+
+export const logoutCustomerSchema = z.object({
+  params: z.object({}).strict(),
+  query: z.object({}).strict(),
+  body: refreshTokenBodySchema,
 });

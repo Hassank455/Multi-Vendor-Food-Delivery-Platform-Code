@@ -160,7 +160,7 @@ export class AuthRepo {
     });
   }
 
-  // ------------------------ Session ------------------------
+  // ------------------------  Refresh Token ------------------------
   async createRefreshToken(
     userId: number,
     expiresAt: Date,
@@ -188,6 +188,53 @@ export class AuthRepo {
       where: { id: refreshTokenId },
       data: {
         refreshTokenHash,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  async findRefreshTokenWithCustomerContext(
+    refreshTokenId: number,
+    tx?: PrismaTransaction,
+  ) {
+    return await this.db(tx).refreshToken.findUnique({
+      where: { id: refreshTokenId },
+      select: {
+        id: true,
+        userId: true,
+        refreshTokenHash: true,
+        expiresAt: true,
+        revokedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            isActive: true,
+            emailVerifiedAt: true,
+            customer: {
+              select: {
+                id: true,
+                userId: true,
+                phone: true,
+                gender: true,
+                paymentPreference: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async revokeRefreshToken(refreshTokenId: number, tx?: PrismaTransaction) {
+    return await this.db(tx).refreshToken.update({
+      where: { id: refreshTokenId },
+      data: {
+        revokedAt: new Date(),
       },
       select: {
         id: true,
