@@ -41,7 +41,7 @@ export const resendVerificationCodeSchema = z.object({
     .strict(),
 });
 
-export const customerLoginSchema = z.object({
+export const loginBodySchema = z.object({
   params: z.object({}).strict(),
   query: z.object({}).strict(),
   body: z

@@ -8,7 +8,7 @@ import prisma from "../../lib/prisma";
 import { MailService } from "../../services/mail.service";
 import { comparePassword, hashPassword } from "../../utils/password";
 import {
-  CustomerLoginBodyDto,
+  LoginBodyDto,
   CustomerLoginResponseDto,
   CustomerSignupBodyDto,
   CustomerSignupResponseDto,
@@ -18,6 +18,7 @@ import {
   LogoutCustomerBodyDto,
   RefreshCustomerTokenBodyDto,
   RefreshCustomerTokenResponseDto,
+  UserLoginResponseDto,
 } from "./auth.dto";
 import { buildVerificationEmail } from "./auth.mail";
 import { AuthRepo } from "./auth.repo";
@@ -161,9 +162,7 @@ export class AuthService {
   }
 
   // -------------------- CUSTOMER LOGIN --------------------
-  async customerLogin(
-    dto: CustomerLoginBodyDto,
-  ): Promise<CustomerLoginResponseDto> {
+  async customerLogin(dto: LoginBodyDto): Promise<CustomerLoginResponseDto> {
     const user = await this.authRepo.findCustomerLoginContextByEmail(dto.email);
 
     this.assertCustomerUserCanLogin(user);
@@ -310,6 +309,95 @@ export class AuthService {
     );
 
     await this.authRepo.revokeRefreshToken(currentRefreshToken!.id);
+  }
+
+  // ------------------ USER LOGIN ------------------
+  async userLogin(dto: LoginBodyDto): Promise<UserLoginResponseDto> {
+    const user = await this.authRepo.findUserByEmail(dto.email);
+
+    this.assertNonCustomerUserCanLogin(user);
+
+    const isPasswordValid = await comparePassword(dto.password, user!.password);
+
+    if (!isPasswordValid) {
+      throw new BadRequestError("Invalid email or password");
+    }
+
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    );
+
+    const result = await prisma.$transaction(async (tx) => {
+      const refreshTokenRecord = await this.authRepo.createRefreshToken(
+        user!.id,
+        refreshTokenExpiresAt,
+        tx,
+      );
+
+      const accessToken = signAccess({
+        userId: user!.id,
+        role: user!.role as Exclude<RoleEnum, typeof RoleEnum.CUSTOMER>,
+      });
+
+      const refreshToken = signRefresh({
+        userId: user!.id,
+        refreshTokenId: refreshTokenRecord.id,
+      });
+
+      const refreshTokenHash = this.hashRefreshToken(refreshToken);
+
+      await this.authRepo.updateRefreshTokenHash(
+        refreshTokenRecord.id,
+        refreshTokenHash,
+        tx,
+      );
+
+      return {
+        accessToken,
+        refreshToken,
+      };
+    });
+
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: {
+        id: user!.id,
+        name: user!.name,
+        email: user!.email,
+        role: user!.role,
+        emailVerifiedAt: user!.emailVerifiedAt,
+        isActive: user!.isActive,
+      },
+    };
+  }
+
+  private assertNonCustomerUserCanLogin(
+    user: {
+      id: number;
+      name: string;
+      email: string;
+      password: string;
+      role: RoleEnum;
+      isActive: number;
+      emailVerifiedAt: Date | null;
+    } | null,
+  ) {
+    if (!user) {
+      throw new BadRequestError("Invalid email or password");
+    }
+
+    if (user.role === RoleEnum.CUSTOMER) {
+      throw new BadRequestError("This account must use customer login");
+    }
+
+    if (user.isActive !== 1) {
+      throw new BadRequestError("This account is inactive");
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new BadRequestError("Please verify your email before logging in");
+    }
   }
 
   private assertCustomerUserCanVerifyEmail(

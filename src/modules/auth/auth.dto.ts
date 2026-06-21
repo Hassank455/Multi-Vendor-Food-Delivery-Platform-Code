@@ -30,7 +30,7 @@ export interface ResendVerificationCodeBodyDto {
   email: string;
 }
 
-export interface CustomerLoginBodyDto {
+export interface LoginBodyDto {
   email: string;
   password: string;
 }
@@ -65,4 +65,17 @@ export interface RefreshCustomerTokenResponseDto {
 }
 export interface LogoutCustomerBodyDto {
   refreshToken: string;
+}
+
+export interface UserLoginResponseDto {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: RoleEnum;
+    emailVerifiedAt: Date | null;
+    isActive: number;
+  };
 }

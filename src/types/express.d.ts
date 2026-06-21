@@ -1,3 +1,4 @@
+import { RoleEnum } from "../generated/prisma/enums";
 import { AppError } from "./error";
 
 declare global {
@@ -6,6 +7,7 @@ declare global {
       error?: AppError;
       user?: {
         id: number;
+        role: RoleEnum;
       };
       customer?: {
         id: number;
@@ -13,3 +15,5 @@ declare global {
     }
   }
 }
+
+export {};

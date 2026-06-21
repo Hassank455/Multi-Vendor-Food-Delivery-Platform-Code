@@ -38,7 +38,10 @@ async function authenticateCustomerAccess(
   }
 
   req.customer = { id: customer.id };
-  req.user = { id: customer.userId };
+  req.user = {
+    id: customer.userId,
+    role: RoleEnum.CUSTOMER,
+  };
 }
 
 async function authenticateUserAccess(
@@ -58,6 +61,7 @@ async function authenticateUserAccess(
     },
     select: {
       id: true,
+      role: true,
     },
   });
 
@@ -65,7 +69,10 @@ async function authenticateUserAccess(
     throw new UnAuthenticatedError("Invalid or inactive user account");
   }
 
-  req.user = { id: user.id };
+  req.user = {
+    id: user.id,
+    role: user.role,
+  };
 }
 
 async function authenticateRequest(req: CustomRequest) {

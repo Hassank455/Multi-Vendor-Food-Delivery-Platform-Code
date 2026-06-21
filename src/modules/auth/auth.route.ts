@@ -32,7 +32,7 @@ router.post(
 
 router.post(
   "/customer/login",
-  validate(authValidators.customerLoginSchema),
+  validate(authValidators.loginBodySchema),
   authController.customerLogin,
 );
 
@@ -46,6 +46,12 @@ router.post(
   "/customer/logout",
   validate(authValidators.logoutCustomerSchema),
   authController.logoutCustomer,
+);
+
+router.post(
+  "/user/login",
+  validate(authValidators.loginBodySchema),
+  authController.userLogin,
 );
 
 export default router;

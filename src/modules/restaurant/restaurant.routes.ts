@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { isAuth, validate } from "../../middlewares";
+import { isAuth, allowRoles, validate } from "../../middlewares";
 import { restaurantModule } from "./restaurant.module";
 import {
   createMenuCategorySchema,
@@ -20,6 +20,7 @@ import {
   updateRestaurantSchema,
   updateRestaurantStatusSchema,
 } from "./restaurant.validation";
+import { RoleEnum } from "../../generated/prisma/enums";
 
 const router = Router();
 const { ownerController, menuController, catalogController } = restaurantModule;
@@ -28,6 +29,7 @@ const { ownerController, menuController, catalogController } = restaurantModule;
 // write-heavy and tied to permissions.
 router.post(
   "/owner/restaurants",
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   isAuth,
   validate(createRestaurantSchema),
   ownerController.createRestaurant,
