@@ -195,7 +195,7 @@ export class AuthRepo {
     });
   }
 
-  async findRefreshTokenWithCustomerContext(
+  async findRefreshTokenWithAuthContext(
     refreshTokenId: number,
     tx?: PrismaTransaction,
   ) {

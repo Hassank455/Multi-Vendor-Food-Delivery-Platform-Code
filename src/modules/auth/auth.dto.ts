@@ -55,15 +55,15 @@ export interface CustomerLoginResponseDto {
   };
 }
 
-export interface RefreshCustomerTokenBodyDto {
+export interface RefreshTokenBodyDto {
   refreshToken: string;
 }
 
-export interface RefreshCustomerTokenResponseDto {
+export interface RefreshTokenResponseDto {
   accessToken: string;
   refreshToken: string;
 }
-export interface LogoutCustomerBodyDto {
+export interface LogoutBodyDto {
   refreshToken: string;
 }
 

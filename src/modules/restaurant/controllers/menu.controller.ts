@@ -1,8 +1,7 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../../utils/asyncHandler";
 import { ForbiddenError } from "../../../errors";
-import { CustomRequest } from "../../../common/tdos";
 import { MenuService } from "../services/menu.service";
 import {
   CreateMenuItemDto,
@@ -17,7 +16,7 @@ import {
 export class MenuController {
   constructor(private menuService: MenuService) {}
 
-  private getOwnerId(req: CustomRequest) {
+  private getOwnerId(req: Request) {
     const ownerId = req.user?.id;
 
     if (!ownerId) {
@@ -27,7 +26,7 @@ export class MenuController {
     return ownerId;
   }
 
-  createMenuItem = asyncHandler(async (req: CustomRequest, res: Response) => {
+  createMenuItem = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);
     const dto: CreateMenuItemDto = req.body;
@@ -45,7 +44,7 @@ export class MenuController {
   });
 
   getOwnerMenuItems = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getOwnerId(req);
       const restaurantId = Number(req.params.restaurantId);
       const query = req.query as unknown as GetOwnerMenuItemsQueryDto;
@@ -64,7 +63,7 @@ export class MenuController {
     },
   );
 
-  updateMenuItem = asyncHandler(async (req: CustomRequest, res: Response) => {
+  updateMenuItem = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);
     const menuItemId = Number(req.params.menuItemId);
@@ -84,7 +83,7 @@ export class MenuController {
   });
 
   updateMenuItemStatus = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getOwnerId(req);
       const restaurantId = Number(req.params.restaurantId);
       const menuItemId = Number(req.params.menuItemId);
@@ -104,7 +103,7 @@ export class MenuController {
     },
   );
 
-  deleteMenuItem = asyncHandler(async (req: CustomRequest, res: Response) => {
+  deleteMenuItem = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);
     const menuItemId = Number(req.params.menuItemId);
@@ -115,7 +114,7 @@ export class MenuController {
   });
 
   getOwnerCategories = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getOwnerId(req);
       const restaurantId = Number(req.params.restaurantId);
       const query = req.query as unknown as GetOwnerCategoriesQueryDto;
@@ -134,7 +133,7 @@ export class MenuController {
     },
   );
 
-  createCategory = asyncHandler(async (req: CustomRequest, res: Response) => {
+  createCategory = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);
     const dto: MenuCategoryInputDto = req.body;
@@ -151,7 +150,7 @@ export class MenuController {
     });
   });
 
-  updateCategory = asyncHandler(async (req: CustomRequest, res: Response) => {
+  updateCategory = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);
     const categoryId = Number(req.params.categoryId);
@@ -171,7 +170,7 @@ export class MenuController {
   });
 
   updateCategoryStatus = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getOwnerId(req);
       const restaurantId = Number(req.params.restaurantId);
       const categoryId = Number(req.params.categoryId);

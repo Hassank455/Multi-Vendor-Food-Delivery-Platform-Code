@@ -1,11 +1,10 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { ForbiddenError } from "../errors";
-import { CustomRequest } from "../common/tdos";
 import { RoleEnum } from "../generated/prisma/enums";
 
 const allowRoles =
   (...allowedRoles: RoleEnum[]) =>
-  (req: CustomRequest, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const role = req.user?.role;
 
     if (!role) {

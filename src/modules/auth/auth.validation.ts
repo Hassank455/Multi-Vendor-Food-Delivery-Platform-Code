@@ -52,13 +52,13 @@ export const loginBodySchema = z.object({
     .strict(),
 });
 
-export const refreshCustomerTokenSchema = z.object({
+export const refreshTokenSchema = z.object({
   params: z.object({}).strict(),
   query: z.object({}).strict(),
   body: refreshTokenBodySchema,
 });
 
-export const logoutCustomerSchema = z.object({
+export const logoutTokenSchema = z.object({
   params: z.object({}).strict(),
   query: z.object({}).strict(),
   body: refreshTokenBodySchema,

@@ -9,14 +9,13 @@ import {
   GetOrderSummaryDto,
 } from "./order.dto";
 import { StatusCodes } from "http-status-codes";
-import { CustomRequest } from "../../common/tdos";
 import { ForbiddenError } from "../../errors";
 import { OrderStatus } from "../../generated/prisma/enums";
 
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
-  private getCustomerId(req: CustomRequest) {
+  private getCustomerId(req: Request) {
     const customerId = req.customer?.id;
 
     if (!customerId) {
@@ -25,7 +24,7 @@ export class OrderController {
 
     return customerId;
   }
-  private getUserId(req: CustomRequest) {
+  private getUserId(req: Request) {
     const userId = req.user?.id;
 
     if (!userId) {
@@ -35,7 +34,7 @@ export class OrderController {
     return userId;
   }
 
-  placeOrder = asyncHandler(async (req: CustomRequest, res: Response) => {
+  placeOrder = asyncHandler(async (req: Request, res: Response) => {
     const customerId = this.getCustomerId(req);
     const dto: PlaceOrderDto = {
       customerAddressId: req.body.customerAddressId,
@@ -48,7 +47,7 @@ export class OrderController {
   });
 
   getCustomerOrders = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const query = req.query as unknown as GetCustomerOrdersQueryDto;
 
@@ -66,7 +65,7 @@ export class OrderController {
   );
 
   getCustomerOrderById = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const orderId = Number(req.params.id);
       const order = await this.orderService.getCustomerOrderById(
@@ -82,7 +81,7 @@ export class OrderController {
 
   // cancel order, only if it's in PENDING and CONFIRMED status
   cancelCustomerOrder = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const orderId = Number(req.params.id);
 
@@ -98,7 +97,7 @@ export class OrderController {
     },
   );
   getRestaurantOrders = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getUserId(req);
 
       const query: GetRestaurantOrdersQueryDto = {
@@ -120,7 +119,7 @@ export class OrderController {
     },
   );
   getRestaurantOrderDetails = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getUserId(req);
       const orderId = Number(req.params.id);
       const order = await this.orderService.getRestaurantOrderDetails(
@@ -135,7 +134,7 @@ export class OrderController {
     },
   );
   updateOrderStatus = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getUserId(req);
       const orderId = Number(req.params.id);
       const dto: UpdateRestaurantOrderStatusDto = {
@@ -156,7 +155,7 @@ export class OrderController {
   );
 
   getCustomerOrderStatus = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const orderId = Number(req.params.id);
 
@@ -172,7 +171,7 @@ export class OrderController {
     },
   );
 
-  getOrderSummary = asyncHandler(async (req: CustomRequest, res: Response) => {
+  getOrderSummary = asyncHandler(async (req: Request, res: Response) => {
     const customerId = this.getCustomerId(req);
     const dto: GetOrderSummaryDto = {
       customerAddressId: req.body.customerAddressId,

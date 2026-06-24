@@ -38,13 +38,13 @@ router.post(
 
 router.post(
   "/customer/refresh",
-  validate(authValidators.refreshCustomerTokenSchema),
+  validate(authValidators.refreshTokenSchema),
   authController.refreshCustomerToken,
 );
 
 router.post(
   "/customer/logout",
-  validate(authValidators.logoutCustomerSchema),
+  validate(authValidators.logoutTokenSchema),
   authController.logoutCustomer,
 );
 
@@ -52,6 +52,18 @@ router.post(
   "/user/login",
   validate(authValidators.loginBodySchema),
   authController.userLogin,
+);
+
+router.post(
+  "/user/refresh",
+  validate(authValidators.refreshTokenSchema),
+  authController.userRefreshToken,
+);
+
+router.post(
+  "/user/logout",
+  validate(authValidators.logoutTokenSchema),
+  authController.logoutUser,
 );
 
 export default router;

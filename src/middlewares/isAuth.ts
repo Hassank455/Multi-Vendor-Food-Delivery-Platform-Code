@@ -3,17 +3,16 @@ import jwt, {
   NotBeforeError,
   TokenExpiredError,
 } from "jsonwebtoken";
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import prisma from "../lib/prisma";
 import { BadRequestError, UnAuthenticatedError } from "../errors";
-import { CustomRequest } from "../common/tdos";
 import { AppErrorImpl } from "../errors/customApiError";
 import { RoleEnum } from "../generated/prisma/enums";
 import { NonCustomerRole, verifyAccess } from "../utils/jwt";
 
 async function authenticateCustomerAccess(
   customerId: number,
-  req: CustomRequest,
+  req: Request,
 ) {
   if (!Number.isInteger(customerId) || customerId <= 0) {
     throw new BadRequestError("Invalid customer identity");
@@ -47,7 +46,7 @@ async function authenticateCustomerAccess(
 async function authenticateUserAccess(
   userId: number,
   role: NonCustomerRole,
-  req: CustomRequest,
+  req: Request,
 ) {
   if (!Number.isInteger(userId) || userId <= 0) {
     throw new BadRequestError("Invalid user identity");
@@ -75,7 +74,7 @@ async function authenticateUserAccess(
   };
 }
 
-async function authenticateRequest(req: CustomRequest) {
+async function authenticateRequest(req: Request) {
   const authorization = req.get("authorization");
 
   if (!authorization) {
@@ -118,7 +117,7 @@ async function authenticateRequest(req: CustomRequest) {
   }
 }
 
-const isAuth = (req: CustomRequest, res: Response, next: NextFunction) => {
+const isAuth = (req: Request, res: Response, next: NextFunction) => {
   void authenticateRequest(req)
     .then(() => next())
     .catch(next);

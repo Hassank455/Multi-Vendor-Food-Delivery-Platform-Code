@@ -1,8 +1,7 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../utils/asyncHandler";
 import { ForbiddenError } from "../../errors";
-import { CustomRequest } from "../../common/tdos";
 import { CustomerService } from "./customer.service";
 import {
   UpdateCustomerProfileDto,
@@ -14,7 +13,7 @@ import {
 export class CustomerController {
   constructor(private customerService: CustomerService) {}
 
-  private getCustomerId(req: CustomRequest) {
+  private getCustomerId(req: Request) {
     const customerId = req.customer?.id;
 
     if (!customerId) {
@@ -24,7 +23,7 @@ export class CustomerController {
     return customerId;
   }
 
-  getProfile = asyncHandler(async (req: CustomRequest, res: Response) => {
+  getProfile = asyncHandler(async (req: Request, res: Response) => {
     const customerId = this.getCustomerId(req);
 
     const customer = await this.customerService.getCustomerProfile(customerId);
@@ -35,7 +34,7 @@ export class CustomerController {
     });
   });
 
-  updateProfile = asyncHandler(async (req: CustomRequest, res: Response) => {
+  updateProfile = asyncHandler(async (req: Request, res: Response) => {
     const customerId = this.getCustomerId(req);
     const dto: UpdateCustomerProfileDto = req.body;
     const customer = await this.customerService.updateCustomerProfile(
@@ -50,7 +49,7 @@ export class CustomerController {
   });
 
   createCustomerReview = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const dto: CreateCustomerReviewDto = req.body;
       const review = await this.customerService.createCustomerReview(
@@ -66,7 +65,7 @@ export class CustomerController {
   );
 
   getCustomerReviews = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       // explain this line
       // The query parameters are cast to the expected DTO type
@@ -87,7 +86,7 @@ export class CustomerController {
   );
 
   deactivateMyAccount = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
 
       await this.customerService.deactivateMyAccount(customerId);
@@ -99,7 +98,7 @@ export class CustomerController {
   );
 
   getPaymentPreference = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const paymentPreference =
         await this.customerService.getPaymentPreference(customerId);
@@ -112,7 +111,7 @@ export class CustomerController {
   );
 
   upsertPaymentPreference = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const dto: UpsertPaymentPreferenceDto = req.body;
       const paymentPreference =

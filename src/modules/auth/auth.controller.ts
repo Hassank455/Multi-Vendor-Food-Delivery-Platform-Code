@@ -6,8 +6,8 @@ import {
   CustomerSignupBodyDto,
   ResendVerificationCodeBodyDto,
   VerifyEmailBodyDto,
-  LogoutCustomerBodyDto,
-  RefreshCustomerTokenBodyDto,
+  LogoutBodyDto,
+  RefreshTokenBodyDto,
 } from "./auth.dto";
 import { AuthService } from "./auth.service";
 
@@ -56,7 +56,7 @@ export class AuthController {
   });
 
   refreshCustomerToken = asyncHandler(async (req: Request, res: Response) => {
-    const dto: RefreshCustomerTokenBodyDto = req.body;
+    const dto: RefreshTokenBodyDto = req.body;
     const data = await this.authService.refreshCustomerToken(dto);
 
     res.status(StatusCodes.OK).json({
@@ -66,7 +66,7 @@ export class AuthController {
   });
 
   logoutCustomer = asyncHandler(async (req: Request, res: Response) => {
-    const dto: LogoutCustomerBodyDto = req.body;
+    const dto: LogoutBodyDto = req.body;
 
     await this.authService.logoutCustomer(dto);
 
@@ -81,6 +81,25 @@ export class AuthController {
 
     res.status(StatusCodes.OK).json({
       message: "User logged in successfully",
+      data,
+    });
+  });
+  logoutUser = asyncHandler(async (req: Request, res: Response) => {
+    const dto: LogoutBodyDto = req.body;
+
+    await this.authService.logoutUser(dto);
+
+    res.status(StatusCodes.OK).json({
+      message: "User logged out successfully",
+    });
+  });
+
+  userRefreshToken = asyncHandler(async (req: Request, res: Response) => {
+    const dto: RefreshTokenBodyDto = req.body;
+    const data = await this.authService.refreshUserToken(dto);
+
+    res.status(StatusCodes.OK).json({
+      message: "User token refreshed successfully",
       data,
     });
   });

@@ -15,9 +15,9 @@ import {
   ResendVerificationCodeBodyDto,
   VerifyEmailBodyDto,
   VerifyEmailResponseDto,
-  LogoutCustomerBodyDto,
-  RefreshCustomerTokenBodyDto,
-  RefreshCustomerTokenResponseDto,
+  LogoutBodyDto,
+  RefreshTokenBodyDto,
+  RefreshTokenResponseDto,
   UserLoginResponseDto,
 } from "./auth.dto";
 import { buildVerificationEmail } from "./auth.mail";
@@ -29,6 +29,8 @@ import {
   TokenExpiredError,
 } from "jsonwebtoken";
 import { signAccess, signRefresh, verifyRefresh } from "../../utils/jwt";
+
+type RefreshTokenOwnerScope = "customer" | "user";
 
 export class AuthService {
   constructor(
@@ -230,25 +232,26 @@ export class AuthService {
     };
   }
 
-  // ------------------ CUSTOMER REFRESH TOKEN ------------------
   async refreshCustomerToken(
-    dto: RefreshCustomerTokenBodyDto,
-  ): Promise<RefreshCustomerTokenResponseDto> {
-    const payload = this.verifyRefreshTokenOrThrow(dto.refreshToken);
+    dto: RefreshTokenBodyDto,
+  ): Promise<RefreshTokenResponseDto> {
+    return await this.refreshToken(dto, "customer");
+  }
 
-    const currentRefreshToken =
-      await this.authRepo.findRefreshTokenWithCustomerContext(
-        payload.refreshTokenId,
-      );
+  async refreshUserToken(
+    dto: RefreshTokenBodyDto,
+  ): Promise<RefreshTokenResponseDto> {
+    return await this.refreshToken(dto, "user");
+  }
 
-    this.assertCustomerRefreshTokenCanBeUsed(
-      currentRefreshToken,
-      payload.userId,
-    );
-
-    this.assertRefreshTokenMatches(
+  // ------------------  REFRESH TOKEN ------------------
+  private async refreshToken(
+    dto: RefreshTokenBodyDto,
+    scope: RefreshTokenOwnerScope,
+  ): Promise<RefreshTokenResponseDto> {
+    const { refreshTokenRecord } = await this.getValidatedRefreshTokenContext(
       dto.refreshToken,
-      currentRefreshToken!.refreshTokenHash!,
+      scope,
     );
 
     const nextRefreshTokenExpiresAt = new Date(
@@ -256,21 +259,27 @@ export class AuthService {
     );
 
     return await prisma.$transaction(async (tx) => {
-      await this.authRepo.revokeRefreshToken(currentRefreshToken!.id, tx);
+      await this.authRepo.revokeRefreshToken(refreshTokenRecord.id, tx);
 
       const nextRefreshTokenRecord = await this.authRepo.createRefreshToken(
-        currentRefreshToken!.user.id,
+        refreshTokenRecord!.user.id,
         nextRefreshTokenExpiresAt,
         tx,
       );
 
-      const accessToken = signAccess({
-        customerId: currentRefreshToken!.user.customer!.id,
-        role: RoleEnum.CUSTOMER,
-      });
+      const accessToken =
+        scope === "customer"
+          ? signAccess({
+              customerId: refreshTokenRecord.user.customer!.id,
+              role: RoleEnum.CUSTOMER,
+            })
+          : signAccess({
+              userId: refreshTokenRecord.user.id,
+              role: this.assertNonCustomerRole(refreshTokenRecord.user.role),
+            });
 
       const refreshToken = signRefresh({
-        userId: currentRefreshToken!.user.id,
+        userId: refreshTokenRecord!.user.id,
         refreshTokenId: nextRefreshTokenRecord.id,
       });
 
@@ -288,27 +297,49 @@ export class AuthService {
       };
     });
   }
+  private async getValidatedRefreshTokenContext(
+    refreshToken: string,
+    scope: RefreshTokenOwnerScope,
+  ) {
+    const payload = this.verifyRefreshTokenOrThrow(refreshToken);
 
-  // ---------------- LOGOUT ----------------
-  async logoutCustomer(dto: LogoutCustomerBodyDto): Promise<void> {
-    const payload = this.verifyRefreshTokenOrThrow(dto.refreshToken);
-
-    const currentRefreshToken =
-      await this.authRepo.findRefreshTokenWithCustomerContext(
+    const refreshTokenRecord =
+      await this.authRepo.findRefreshTokenWithAuthContext(
         payload.refreshTokenId,
       );
 
-    this.assertCustomerRefreshTokenCanBeUsed(
-      currentRefreshToken,
-      payload.userId,
-    );
+    this.assertRefreshTokenIsUsable(refreshTokenRecord, payload.userId, scope);
 
     this.assertRefreshTokenMatches(
-      dto.refreshToken,
-      currentRefreshToken!.refreshTokenHash!,
+      refreshToken,
+      refreshTokenRecord!.refreshTokenHash!,
     );
 
-    await this.authRepo.revokeRefreshToken(currentRefreshToken!.id);
+    return {
+      payload,
+      refreshTokenRecord: refreshTokenRecord!,
+    };
+  }
+
+  // ---------------- LOGOUT ----------------
+  async logoutCustomer(dto: LogoutBodyDto): Promise<void> {
+    await this.logout(dto, "customer");
+  }
+
+  async logoutUser(dto: LogoutBodyDto): Promise<void> {
+    await this.logout(dto, "user");
+  }
+
+  private async logout(
+    dto: LogoutBodyDto,
+    scope: RefreshTokenOwnerScope,
+  ): Promise<void> {
+    const { refreshTokenRecord } = await this.getValidatedRefreshTokenContext(
+      dto.refreshToken,
+      scope,
+    );
+
+    await this.authRepo.revokeRefreshToken(refreshTokenRecord.id);
   }
 
   // ------------------ USER LOGIN ------------------
@@ -336,7 +367,7 @@ export class AuthService {
 
       const accessToken = signAccess({
         userId: user!.id,
-        role: user!.role as Exclude<RoleEnum, typeof RoleEnum.CUSTOMER>,
+        role: this.assertNonCustomerRole(user!.role),
       });
 
       const refreshToken = signRefresh({
@@ -398,6 +429,16 @@ export class AuthService {
     if (!user.emailVerifiedAt) {
       throw new BadRequestError("Please verify your email before logging in");
     }
+  }
+
+  private assertNonCustomerRole(
+    role: RoleEnum,
+  ): Exclude<RoleEnum, typeof RoleEnum.CUSTOMER> {
+    if (role === RoleEnum.CUSTOMER) {
+      throw new BadRequestError("This account must use customer login");
+    }
+
+    return role;
   }
 
   private assertCustomerUserCanVerifyEmail(
@@ -546,7 +587,7 @@ export class AuthService {
     }
   }
 
-  private assertCustomerRefreshTokenCanBeUsed(
+  private assertRefreshTokenIsUsable(
     refreshTokenRecord: {
       id: number;
       userId: number;
@@ -570,6 +611,7 @@ export class AuthService {
       };
     } | null,
     expectedUserId: number,
+    scope: RefreshTokenOwnerScope,
   ) {
     if (!refreshTokenRecord) {
       throw new UnAuthenticatedError("Invalid refresh token");
@@ -591,10 +633,6 @@ export class AuthService {
       throw new UnAuthenticatedError("Refresh token has expired");
     }
 
-    if (refreshTokenRecord.user.role !== RoleEnum.CUSTOMER) {
-      throw new UnAuthenticatedError("Invalid refresh token");
-    }
-
     if (refreshTokenRecord.user.isActive !== 1) {
       throw new UnAuthenticatedError("This account is inactive");
     }
@@ -603,8 +641,20 @@ export class AuthService {
       throw new UnAuthenticatedError("Please verify your email first");
     }
 
-    if (!refreshTokenRecord.user.customer) {
-      throw new UnAuthenticatedError("Customer profile not found");
+    if (scope === "customer") {
+      if (refreshTokenRecord.user.role !== RoleEnum.CUSTOMER) {
+        throw new UnAuthenticatedError("Invalid refresh token");
+      }
+
+      if (!refreshTokenRecord.user.customer) {
+        throw new UnAuthenticatedError("Customer profile not found");
+      }
+
+      return;
+    }
+
+    if (refreshTokenRecord.user.role === RoleEnum.CUSTOMER) {
+      throw new UnAuthenticatedError("Invalid refresh token");
     }
   }
 }
