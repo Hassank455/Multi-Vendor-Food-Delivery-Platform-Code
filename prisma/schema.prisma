@@ -7,36 +7,133 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  phone     String
-  password  String
-  createdAt DateTime  @default(now())
-  deletedAt DateTime?
+// -----------------------------------------------------------------------------------------------------
+//                                           ENUMS
+//------------------------------------------------------------------------------------------------------
 
-  role Role @default(CUSTOMER)
 
-  restaurant Restaurant[]
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
 }
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum CartEventType {
+  ITEM_ADDED
+  ITEM_REMOVED
+  CART_CLEARED
+  CART_CHECKED_OUT
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum PaymentMethod {
+  CASH
+  CARD
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum TransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum RoleEnum {
+  SUPER_ADMIN
+  ADMIN
+  CUSTOMER
+  RESTAURANT_OWNER
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum AuthCodePurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+ // PHONE_VERIFICATION
+ // LOGIN_OTP
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique
+  password        String
+  role            RoleEnum  @default(CUSTOMER)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  isActive        Int       @default(1)
+
+  customer   Customer?
+  restaurant Restaurant?
+  authCodes AuthCode[]
+  refreshTokens RefreshToken[]
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Customer {
   id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
+  userId    Int       @unique 
   phone     String
-  password  String
-  paymentPreference PaymentMethod?
-  createdAt DateTime  @default(now())
-  deletedAt DateTime?
+  gender    String?
 
+  paymentPreference PaymentMethod?
+  
+  user      User           @relation(fields: [userId], references: [id])
   cart      Cart?
   orders    Order[]
   reviews   Review[]
   customerAddresses CustomerAddress[]
-  // Can the user have multiple restaurants?
 }
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+// Stores temporary auth codes for email verification and password reset.
+// Codes expire after a short time and are marked as consumed once used.
+model AuthCode {
+  id         Int             @id @default(autoincrement())   // Unique code record ID
+  userId     Int                                             // User who owns this code
+  purpose    AuthCodePurpose                                 // Why this code was issued
+  codeHash   String                                          // Hashed OTP or reset code
+  expiresAt  DateTime                                        // Expiration time
+  consumedAt DateTime?                                       // Set when the code is used
+  createdAt  DateTime        @default(now())                 // Creation timestamp
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id               Int      @id @default(autoincrement())     // Unique refresh token record ID used inside the refresh token payload
+  userId           Int                                        // The user who owns this refresh token
+  refreshTokenHash String?                                    // Hashed refresh token value, stored after the token is issued
+  expiresAt        DateTime                                   // When this refresh token expires
+  revokedAt        DateTime?                                  // Set when this refresh token is revoked or invalidated
+  createdAt        DateTime @default(now())                   // When this refresh token record was created
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model CustomerAddress {
   id          Int     @id @default(autoincrement())
@@ -204,38 +301,7 @@ model DiscountCode {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
-enum Role {
-  CUSTOMER
-  RESTAURANT_OWNER
-}
 
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  OUT_FOR_DELIVERY
-  DELIVERED
-  CANCELLED
-}
-
-enum CartEventType {
-  ITEM_ADDED
-  ITEM_REMOVED
-  CART_CLEARED
-  CART_CHECKED_OUT
-}
-
-enum PaymentMethod {
-  CASH
-  CARD
-}
-
-enum TransactionStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  CANCELLED
-}
 
 // Transaction?
 model Transaction {

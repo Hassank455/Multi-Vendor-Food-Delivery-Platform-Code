@@ -7,12 +7,11 @@ import {
   UpdateCustomerAddressDto,
 } from "./customer_address.dto";
 import { ForbiddenError } from "../../errors";
-import { CustomRequest } from "../../common/tdos";
 
 export class CustomerAddressController {
   constructor(private customerAddressService: CustomerAddressService) {}
 
-  private getCustomerId(req: CustomRequest) {
+  private getCustomerId(req: Request) {
     const customerId = req.customer?.id;
 
     if (!customerId) {
@@ -23,7 +22,7 @@ export class CustomerAddressController {
   }
 
   getCustomerAddresses = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const customerAddresses =
         await this.customerAddressService.getCustomerAddresses(customerId);
@@ -35,7 +34,7 @@ export class CustomerAddressController {
     },
   );
 
-  getCustomerAddress = asyncHandler(async (req: CustomRequest, res: Response) => {
+  getCustomerAddress = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const customerId = this.getCustomerId(req);
 
@@ -52,7 +51,7 @@ export class CustomerAddressController {
   });
 
   createCustomerAddress = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const customerId = this.getCustomerId(req);
       const dto: CreateCustomerAddressDto = req.body;
 
@@ -67,7 +66,7 @@ export class CustomerAddressController {
   );
 
   updateCustomerAddress = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const { id } = req.params;
       const customerId = this.getCustomerId(req);
       const dto: UpdateCustomerAddressDto = req.body;
@@ -86,7 +85,7 @@ export class CustomerAddressController {
     },
   );
 
-  deleteCustomerAddress = asyncHandler(async (req: CustomRequest, res: Response) => {
+  deleteCustomerAddress = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
     const customerId = this.getCustomerId(req);
 

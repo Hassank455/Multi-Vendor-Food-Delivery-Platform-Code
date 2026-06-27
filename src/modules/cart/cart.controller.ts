@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { CartService } from "./cart.service";
 import { StatusCodes } from "http-status-codes";
-import { CustomRequest } from "../../common/tdos";
 import asyncHandler from "../../utils/asyncHandler";
 import {
   AdjustCartItemQuantityDto,
@@ -22,7 +21,7 @@ export class CartController {
       .json({ data: cart, message: "Cart created successfully" });
   });
 
-  getMyCart = asyncHandler(async (req: CustomRequest, res: Response) => {
+  getMyCart = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.body.customerId;
     const cart = await this.cartService.getMyCart(customerId);
 
@@ -31,7 +30,7 @@ export class CartController {
       .json({ message: "Cart fetched successfully", data: cart });
   });
 
-  addItemToCart = asyncHandler(async (req: CustomRequest, res: Response) => {
+  addItemToCart = asyncHandler(async (req: Request, res: Response) => {
     const dto: AddToCartDto = {
       customerId: req.body.customerId,
       menuItemId: req.body.menuItemId,

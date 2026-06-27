@@ -1,8 +1,7 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../../utils/asyncHandler";
 import { ForbiddenError } from "../../../errors";
-import { CustomRequest } from "../../../common/tdos";
 import { OwnerService } from "../services/owner.service";
 import {
   CreateRestaurantDto,
@@ -13,7 +12,7 @@ import {
 export class OwnerController {
   constructor(private ownerService: OwnerService) {}
 
-  private getOwnerId(req: CustomRequest) {
+  private getOwnerId(req: Request) {
     const ownerId = req.user?.id;
 
     if (!ownerId) {
@@ -23,7 +22,7 @@ export class OwnerController {
     return ownerId;
   }
 
-  createRestaurant = asyncHandler(async (req: CustomRequest, res: Response) => {
+  createRestaurant = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const dto: CreateRestaurantDto = req.body;
 
@@ -35,7 +34,7 @@ export class OwnerController {
     });
   });
 
-  getRestaurant = asyncHandler(async (req: CustomRequest, res: Response) => {
+  getRestaurant = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurant = await this.ownerService.findOwnerRestaurant(ownerId);
 
@@ -45,7 +44,7 @@ export class OwnerController {
     });
   });
 
-  updateRestaurant = asyncHandler(async (req: CustomRequest, res: Response) => {
+  updateRestaurant = asyncHandler(async (req: Request, res: Response) => {
     const ownerId = this.getOwnerId(req);
     const restaurantId = Number(req.params.restaurantId);
     const dto: UpdateRestaurantDto = req.body;
@@ -63,7 +62,7 @@ export class OwnerController {
   });
 
   updateRestaurantStatus = asyncHandler(
-    async (req: CustomRequest, res: Response) => {
+    async (req: Request, res: Response) => {
       const ownerId = this.getOwnerId(req);
       const restaurantId = Number(req.params.restaurantId);
       const dto: UpdateRestaurantStatusDto = req.body;
