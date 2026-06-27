@@ -5,6 +5,7 @@ import customerAddressRoutes from "../modules/customer_address/customer_address.
 import orderRoutes from "../modules/order/order.route";
 import customerRoutes from "../modules/customer_management/customer.route";
 import restaurantRoutes from "../modules/restaurant/restaurant.routes";
+import userRoutes from "../modules/user/user.route";
 
 const router = Router();
 
@@ -13,6 +14,7 @@ router.use("/cart", cartRoutes);
 router.use("/customer-addresses", customerAddressRoutes);
 router.use("/orders", orderRoutes);
 router.use("/customers", customerRoutes);
+router.use("/admin/users", userRoutes);
 router.use("/", restaurantRoutes);
 
 export default router;

@@ -16,6 +16,45 @@ const prisma = new PrismaClient({
 
 const DEMO_PASSWORD = "demo123456";
 
+async function bootstrapSuperAdmin() {
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+
+  if (!superAdminEmail && !superAdminPassword) {
+    console.warn(
+      "SUPER_ADMIN bootstrap skipped: SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD are not set.",
+    );
+    return;
+  }
+
+  if (!superAdminEmail || !superAdminPassword) {
+    throw new Error(
+      "SUPER_ADMIN bootstrap requires both SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD.",
+    );
+  }
+
+  const passwordHash = await bcrypt.hash(superAdminPassword, 10);
+
+  await prisma.user.upsert({
+    where: { email: superAdminEmail },
+    update: {
+      name: "Bootstrap Super Admin",
+      password: passwordHash,
+      role: RoleEnum.SUPER_ADMIN,
+      isActive: 1,
+      emailVerifiedAt: new Date(),
+    },
+    create: {
+      name: "Bootstrap Super Admin",
+      email: superAdminEmail,
+      password: passwordHash,
+      role: RoleEnum.SUPER_ADMIN,
+      isActive: 1,
+      emailVerifiedAt: new Date(),
+    },
+  });
+}
+
 async function findOrCreateCustomerAddress(data: {
   customerId: number;
   street: string;
@@ -45,6 +84,8 @@ async function findOrCreateCustomerAddress(data: {
 }
 
 async function main() {
+  await bootstrapSuperAdmin();
+
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
   const owner = await prisma.user.upsert({

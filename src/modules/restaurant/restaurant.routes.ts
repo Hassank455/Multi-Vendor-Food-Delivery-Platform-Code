@@ -29,17 +29,23 @@ const { ownerController, menuController, catalogController } = restaurantModule;
 // write-heavy and tied to permissions.
 router.post(
   "/owner/restaurants",
-  allowRoles(RoleEnum.RESTAURANT_OWNER),
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(createRestaurantSchema),
   ownerController.createRestaurant,
 );
 
-router.get("/owner/restaurants/me", isAuth, ownerController.getRestaurant);
+router.get(
+  "/owner/restaurants/me",
+  isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
+  ownerController.getRestaurant,
+);
 
 router.patch(
   "/owner/restaurants/:restaurantId",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(updateRestaurantSchema),
   ownerController.updateRestaurant,
 );
@@ -47,6 +53,7 @@ router.patch(
 router.patch(
   "/owner/restaurants/:restaurantId/status",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(updateRestaurantStatusSchema),
   ownerController.updateRestaurantStatus,
 );
@@ -55,6 +62,7 @@ router.patch(
 router.post(
   "/owner/restaurants/:restaurantId/menu-items",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(createMenuItemSchema),
   menuController.createMenuItem,
 );
@@ -62,6 +70,7 @@ router.post(
 router.get(
   "/owner/restaurants/:restaurantId/menu-items",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(getOwnerMenuItemsSchema),
   menuController.getOwnerMenuItems,
 );
@@ -69,6 +78,7 @@ router.get(
 router.patch(
   "/owner/restaurants/:restaurantId/menu-items/:menuItemId",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(updateMenuItemSchema),
   menuController.updateMenuItem,
 );
@@ -76,6 +86,7 @@ router.patch(
 router.patch(
   "/owner/restaurants/:restaurantId/menu-items/:menuItemId/status",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(updateMenuItemStatusSchema),
   menuController.updateMenuItemStatus,
 );
@@ -83,6 +94,7 @@ router.patch(
 router.delete(
   "/owner/restaurants/:restaurantId/menu-items/:menuItemId",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(deleteMenuItemSchema),
   menuController.deleteMenuItem,
 );
@@ -90,6 +102,7 @@ router.delete(
 router.get(
   "/owner/restaurants/:restaurantId/categories",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(getOwnerCategoriesSchema),
   menuController.getOwnerCategories,
 );
@@ -97,6 +110,7 @@ router.get(
 router.post(
   "/owner/restaurants/:restaurantId/categories",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(createMenuCategorySchema),
   menuController.createCategory,
 );
@@ -104,6 +118,7 @@ router.post(
 router.patch(
   "/owner/restaurants/:restaurantId/categories/:categoryId",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(updateMenuCategorySchema),
   menuController.updateCategory,
 );
@@ -111,6 +126,7 @@ router.patch(
 router.patch(
   "/owner/restaurants/:restaurantId/categories/:categoryId/status",
   isAuth,
+  allowRoles(RoleEnum.RESTAURANT_OWNER),
   validate(updateMenuCategoryStatusSchema),
   menuController.updateCategoryStatus,
 );
