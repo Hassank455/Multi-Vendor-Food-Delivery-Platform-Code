@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
+    "test:unit": "jest --testPathPatterns=\\.unit\\.spec\\.ts$",
+    "test:int": "jest --runInBand --testPathPatterns=\\.int\\.spec\\.ts$",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit",

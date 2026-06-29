@@ -18,7 +18,12 @@
   },
 
   "include": ["src"],
-  "exclude": ["node_modules"],
+  "exclude": [
+    "node_modules",
+    // Keep feature-based test files out of the production build output.
+    "src/**/*.unit.spec.ts",
+    "src/**/*.int.spec.ts"
+  ],
   "ts-node": {
     "files": true
   }
