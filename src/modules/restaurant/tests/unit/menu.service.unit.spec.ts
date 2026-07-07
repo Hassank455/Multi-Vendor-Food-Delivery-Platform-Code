@@ -7,7 +7,9 @@ type MenuRepositoryMock = {
   [K in
     | "findRestaurantByOwnerId"
     | "findCategoryByRestaurantId"
-    | "createMenuItem"]: jest.MockedFunction<MenuRepository[K]>;
+    | "createMenuItem"
+    | "updateMenuItem"
+    | "findMenuItemByRestaurantId"]: jest.MockedFunction<MenuRepository[K]>;
 };
 
 const ownerId = 10;
@@ -59,6 +61,8 @@ describe("MenuService.createMenuItem", () => {
       findRestaurantByOwnerId: jest.fn(),
       findCategoryByRestaurantId: jest.fn(),
       createMenuItem: jest.fn(),
+      updateMenuItem: jest.fn(),
+      findMenuItemByRestaurantId: jest.fn(),
     };
 
     service = new MenuService(menuRepository as unknown as MenuRepository);
@@ -144,14 +148,97 @@ describe("MenuService.updateMenuItem", () => {
       findRestaurantByOwnerId: jest.fn(),
       findCategoryByRestaurantId: jest.fn(),
       createMenuItem: jest.fn(),
+      updateMenuItem: jest.fn(),
+      findMenuItemByRestaurantId: jest.fn(),
     };
 
     service = new MenuService(menuRepository as unknown as MenuRepository);
   });
 
-  it("throws NotFoundError when the owner restaurant does not exist", async () => {});
-  it("throws NotFoundError when the menu item does not exist", async () => {});
-  it("throws NotFoundError when the new category does not exist", async () => {});
+  it("throws NotFoundError when the owner restaurant does not exist", async () => {
+    // Arrange
+    menuRepository.findRestaurantByOwnerId.mockResolvedValue(null);
+
+    // Act
+    const action = service.updateMenuItem(
+      ownerId,
+      restaurantId,
+      mockMenuItem.id,
+      mockCreateMenuItemDto,
+    );
+
+    // Assert
+    await expect(action).rejects.toThrow("Restaurant not found");
+
+    expect(menuRepository.findRestaurantByOwnerId).toHaveBeenCalledWith(
+      ownerId,
+      restaurantId,
+    );
+    expect(menuRepository.updateMenuItem).not.toHaveBeenCalled();
+  });
+  it("throws NotFoundError when the menu item does not exist", async () => {
+    // Arrange
+    menuRepository.findRestaurantByOwnerId.mockResolvedValue(mockRestaurant);
+    menuRepository.findMenuItemByRestaurantId.mockResolvedValue(null);
+
+    // Act
+    const action = service.updateMenuItem(
+      ownerId,
+      restaurantId,
+      mockMenuItem.id,
+      mockCreateMenuItemDto,
+    );
+
+    // Assert
+    await expect(action).rejects.toThrow("Menu item not found");
+
+    expect(menuRepository.findRestaurantByOwnerId).toHaveBeenCalledWith(
+      ownerId,
+      restaurantId,
+    );
+    expect(menuRepository.findMenuItemByRestaurantId).toHaveBeenCalledWith(
+      restaurantId,
+      mockMenuItem.id,
+    );
+    expect(menuRepository.findCategoryByRestaurantId).not.toHaveBeenCalled();
+    expect(menuRepository.updateMenuItem).not.toHaveBeenCalled();
+  });
+  it("throws NotFoundError when the new category does not exist", async () => {
+    // Arrange
+    menuRepository.findRestaurantByOwnerId.mockResolvedValue(mockRestaurant);
+    menuRepository.findMenuItemByRestaurantId.mockResolvedValue({
+      id: mockMenuItem.id,
+      name: mockMenuItem.name,
+      restaurantId: mockMenuItem.restaurantId,
+      categoryId: mockMenuItem.category.id,
+    });
+    menuRepository.findCategoryByRestaurantId.mockResolvedValue(null);
+
+    // Act
+    const action = service.updateMenuItem(
+      ownerId,
+      restaurantId,
+      mockMenuItem.id,
+      mockCreateMenuItemDto,
+    );
+
+    // Assert
+    await expect(action).rejects.toThrow("Menu category not found");
+
+    expect(menuRepository.findRestaurantByOwnerId).toHaveBeenCalledWith(
+      ownerId,
+      restaurantId,
+    );
+    expect(menuRepository.findMenuItemByRestaurantId).toHaveBeenCalledWith(
+      restaurantId,
+      mockMenuItem.id,
+    );
+    expect(menuRepository.findCategoryByRestaurantId).toHaveBeenCalledWith(
+      restaurantId,
+      mockCreateMenuItemDto.categoryId,
+    );
+    expect(menuRepository.updateMenuItem).not.toHaveBeenCalled();
+  });
   it("updates the menu item when categoryId is not provided", async () => {});
   it("updates the menu item when a valid categoryId is provided", async () => {});
   it("does not validate category when categoryId is undefined", async () => {});

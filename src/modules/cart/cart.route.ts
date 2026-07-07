@@ -8,13 +8,14 @@ const cartController = container.cartController;
 
 router.get(
   "/",
-  // isAuth,
+  isAuth,
+  validate(cartValidators.getMyCartSchema),
   cartController.getMyCart,
 );
 
 router.post(
   "/items",
-  // isAuth,
+  isAuth,
   validate(cartValidators.addItemToCartSchema),
   cartController.addItemToCart,
 );
@@ -22,7 +23,7 @@ router.post(
 // we can the end point like this : /:cartId/items/:menuItemId
 router.patch(
   "/items/:menuItemId",
-  // isAuth,
+  isAuth,
   validate(cartValidators.updateCartItemQuantitySchema),
   cartController.updateCartItemQuantity,
 );
@@ -30,7 +31,7 @@ router.patch(
 // increase quantity by 1
 router.patch(
   "/items/:menuItemId/increase",
-  // isAuth,
+  isAuth,
   validate(cartValidators.adjustCartItemQuantitySchema),
   cartController.increaseCartItemQuantity,
 );
@@ -38,21 +39,22 @@ router.patch(
 // decrease quantity by 1
 router.patch(
   "/items/:menuItemId/decrease",
-  // isAuth,
+  isAuth,
   validate(cartValidators.adjustCartItemQuantitySchema),
   cartController.decreaseCartItemQuantity,
 );
 
 router.delete(
   "/items/:menuItemId",
-  // isAuth,
+  isAuth,
   validate(cartValidators.removeCartItemSchema),
   cartController.removeItemFromCart,
 );
 
 router.delete(
   "/clear",
-  // isAuth,
+  isAuth,
+  validate(cartValidators.clearCartSchema),
   cartController.clearCart,
 );
 

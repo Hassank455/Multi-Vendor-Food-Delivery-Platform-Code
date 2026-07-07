@@ -5,7 +5,9 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { RoleEnum } from "../src/generated/prisma/enums";
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set. Make sure the .env file is loaded.");
+  throw new Error(
+    "DATABASE_URL is not set. Make sure the .env file is loaded.",
+  );
 }
 
 const prisma = new PrismaClient({
@@ -15,6 +17,82 @@ const prisma = new PrismaClient({
 });
 
 const DEMO_PASSWORD = "demo123456";
+const BULK_CUSTOMER_COUNT = parseSeedCount(process.env.SEED_CUSTOMER_COUNT);
+// to run the seed script with a specific number of customers, use the following command:
+// SEED_CUSTOMER_COUNT=500 pnpm db:seed
+function parseSeedCount(value: string | undefined) {
+  if (!value) {
+    return 0;
+  }
+
+  const parsedValue = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsedValue) || parsedValue < 0) {
+    throw new Error("SEED_CUSTOMER_COUNT must be a non-negative integer.");
+  }
+
+  return parsedValue;
+}
+
+async function seedBulkCustomers(count: number, passwordHash: string) {
+  if (count === 0) {
+    return {
+      usersCount: 0,
+      customersCount: 0,
+    };
+  }
+
+  const bulkUsers = Array.from({ length: count }, (_, index) => {
+    const sequence = String(index + 1).padStart(4, "0");
+
+    return {
+      name: `Seed Customer ${sequence}`,
+      email: `seed.customer${sequence}@foodlify.demo`,
+      phone: `0597${String(index + 1).padStart(6, "0")}`,
+    };
+  });
+
+  await prisma.user.createMany({
+    data: bulkUsers.map((user) => ({
+      name: user.name,
+      email: user.email,
+      password: passwordHash,
+      role: RoleEnum.CUSTOMER,
+      isActive: 1,
+      emailVerifiedAt: new Date(),
+    })),
+    skipDuplicates: true,
+  });
+
+  const users = await prisma.user.findMany({
+    where: {
+      email: {
+        in: bulkUsers.map((user) => user.email),
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+    },
+  });
+
+  const phoneByEmail = new Map(
+    bulkUsers.map((user) => [user.email, user.phone] as const),
+  );
+
+  await prisma.customer.createMany({
+    data: users.map((user) => ({
+      userId: user.id,
+      phone: phoneByEmail.get(user.email) ?? "0597000000",
+    })),
+    skipDuplicates: true,
+  });
+
+  return {
+    usersCount: users.length,
+    customersCount: users.length,
+  };
+}
 
 async function bootstrapSuperAdmin() {
   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
@@ -87,6 +165,10 @@ async function main() {
   await bootstrapSuperAdmin();
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const bulkCustomerResult = await seedBulkCustomers(
+    BULK_CUSTOMER_COUNT,
+    passwordHash,
+  );
 
   const owner = await prisma.user.upsert({
     where: { email: "owner@foodlify.demo" },
@@ -204,10 +286,7 @@ async function main() {
     });
   }
 
-  const categoryDefinitions = [
-    { name: "Burgers" },
-    { name: "Sides" },
-  ] as const;
+  const categoryDefinitions = [{ name: "Burgers" }, { name: "Sides" }] as const;
 
   const categories = [];
 
@@ -306,6 +385,9 @@ async function main() {
   );
   console.log(`Demo password: ${DEMO_PASSWORD}`);
   console.log(`Restaurant: ${restaurant.name}`);
+  console.log(
+    `Bulk seeded customers: ${bulkCustomerResult.customersCount} (SEED_CUSTOMER_COUNT=${BULK_CUSTOMER_COUNT})`,
+  );
 }
 
 main()

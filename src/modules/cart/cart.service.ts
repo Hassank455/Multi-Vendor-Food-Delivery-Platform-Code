@@ -1,4 +1,4 @@
-import { NotFoundError, ForbiddenError, BadRequestError } from "../../errors";
+import { NotFoundError, BadRequestError } from "../../errors";
 import prisma from "../../lib/prisma";
 import { CartRepository } from "./cart.repository";
 import {
@@ -8,7 +8,6 @@ import {
   CartItemResponseDto,
   CartResponseDto,
   RemoveCartItemDto,
-  ClearCartDto,
 } from "./cart.dto";
 import type { Prisma } from "../../generated/prisma/client";
 
@@ -28,6 +27,7 @@ export class CartService {
     }
 
     const subTotal = this.calculateSubTotal(cart.items);
+    // When the last item is removed, the cart should no longer point to a restaurant.
     const restaurantId =
       cart.items.length > 0 ? (cart.restaurantId ?? cart.items[0].menuItem.restaurantId) : null;
 
@@ -75,14 +75,45 @@ export class CartService {
     };
   }
 
-  async createCart(customerId: number): Promise<CartResponseDto> {
-    let cart = await this.cartRepository.findCartByCustomerId(customerId);
+  private async getExistingCartOrThrow(
+    customerId: number,
+    tx: PrismaTransaction,
+  ) {
+    const cart = await this.cartRepository.findCartByCustomerId(customerId, tx);
+
     if (!cart) {
-      cart = await this.cartRepository.createCart(customerId);
+      throw new NotFoundError("Cart not found");
     }
 
-    const cartDetails = await this.cartRepository.getCartDetails(customerId);
-    return this.formatCart(cartDetails, customerId);
+    return cart;
+  }
+
+  private async getOrCreateCart(customerId: number, tx: PrismaTransaction) {
+    const cart = await this.cartRepository.findCartByCustomerId(customerId, tx);
+
+    if (cart) {
+      return cart;
+    }
+
+    return this.cartRepository.createCart(customerId, tx);
+  }
+
+  private async getCartItemOrThrow(
+    cartId: number,
+    menuItemId: number,
+    tx: PrismaTransaction,
+  ) {
+    const cartItem = await this.cartRepository.findCartItem(
+      cartId,
+      menuItemId,
+      tx,
+    );
+
+    if (!cartItem) {
+      throw new NotFoundError("Cart item not found");
+    }
+
+    return cartItem;
   }
 
   async getMyCart(customerId: number): Promise<CartResponseDto> {
@@ -101,27 +132,15 @@ export class CartService {
     return menuItem;
   }
 
-  async addItemToCart(dto: AddToCartDto): Promise<CartResponseDto> {
+  async addItemToCart(
+    customerId: number,
+    dto: AddToCartDto,
+  ): Promise<CartResponseDto> {
     const cart = await prisma.$transaction(async (tx) => {
-      // Check if the cart exists
-      let cart = await this.cartRepository.findCartByCustomerId(
-        dto.customerId,
-        tx,
-      );
+      // A cart is created lazily the first time the customer adds an item.
+      const cart = await this.getOrCreateCart(customerId, tx);
 
-      if (!cart) {
-        cart = await this.cartRepository.createCart(dto.customerId, tx);
-      }
-      // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== dto.customerId) {
-        throw new ForbiddenError("Access denied to the specified cart");
-      }
-
-      // check if the product exists
       const menuItem = await this.getMenuItemDetails(dto.menuItemId, tx);
-      if (!menuItem) {
-        throw new NotFoundError("Product not found");
-      }
       if (!menuItem.isAvailable) {
         throw new BadRequestError("Product is not available for purchase");
       }
@@ -146,14 +165,13 @@ export class CartService {
         );
       }
 
-      // check if the item already exists in the cart
       const existingCartItem = await this.cartRepository.findCartItem(
         cart.id,
         dto.menuItemId,
         tx,
       );
       if (existingCartItem) {
-        // If the item already exists, update the quantity
+        // Keep add-to-cart idempotent from the customer's point of view by stacking quantities.
         await this.cartRepository.updateCartItemQuantity(
           cart.id,
           dto.menuItemId,
@@ -161,7 +179,7 @@ export class CartService {
           tx,
         );
       } else {
-        // If the item does not exist, add it to the cart
+        // Price is snapshotted in the cart item so later menu price changes do not rewrite old cart rows.
         await this.cartRepository.createCartItem(
           cart.id,
           dto.menuItemId,
@@ -171,41 +189,21 @@ export class CartService {
         );
       }
 
-      // Return the updated cart with the new item added
-      return await this.syncCartSubTotal(dto.customerId, tx);
+      return await this.syncCartSubTotal(customerId, tx);
     });
 
-    return this.formatCart(cart, dto.customerId);
+    return this.formatCart(cart, customerId);
   }
 
   async updateQuantity(
+    customerId: number,
     dto: UpdateCartItemQuantityDto,
   ): Promise<CartResponseDto> {
     const cart = await prisma.$transaction(async (tx) => {
-      // Check if the cart exists
-      let cart = await this.cartRepository.findCartByCustomerId(
-        dto.customerId,
-        tx,
-      );
+      const cart = await this.getExistingCartOrThrow(customerId, tx);
+      await this.getCartItemOrThrow(cart.id, dto.menuItemId, tx);
 
-      if (!cart) {
-        throw new NotFoundError("Cart not found");
-      }
-      // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== dto.customerId) {
-        throw new ForbiddenError("Access denied to the specified cart");
-      }
-
-      // ensure that the item is exists in the cart
-      const existingCartItem = await this.cartRepository.findCartItem(
-        cart.id,
-        dto.menuItemId,
-        tx,
-      );
-      if (!existingCartItem) {
-        throw new NotFoundError("Cart item not found");
-      }
-
+      // quantity = 0 behaves like remove, so clients do not need a separate flow.
       if (dto.quantity === 0) {
         await this.cartRepository.removeCartItem(cart.id, dto.menuItemId, tx);
       } else {
@@ -217,81 +215,44 @@ export class CartService {
         );
       }
 
-      // Return the updated cart with the new item added
-      return this.syncCartSubTotal(dto.customerId, tx);
+      return this.syncCartSubTotal(customerId, tx);
     });
 
-    return this.formatCart(cart, dto.customerId);
+    return this.formatCart(cart, customerId);
   }
 
   async increaseCartItemQuantity(
+    customerId: number,
     dto: AdjustCartItemQuantityDto,
   ): Promise<CartResponseDto> {
     const cart = await prisma.$transaction(async (tx) => {
-      // Check if the cart exists
-      let cart = await this.cartRepository.findCartByCustomerId(
-        dto.customerId,
-        tx,
-      );
+      const cart = await this.getExistingCartOrThrow(customerId, tx);
+      await this.getCartItemOrThrow(cart.id, dto.menuItemId, tx);
 
-      if (!cart) {
-        throw new NotFoundError("Cart not found");
-      }
-      // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== dto.customerId) {
-        throw new ForbiddenError("Access denied to the specified cart");
-      }
-
-      // ensure that the item is exists in the cart
-      const existingCartItem = await this.cartRepository.findCartItem(
-        cart.id,
-        dto.menuItemId,
-        tx,
-      );
-      if (!existingCartItem) {
-        throw new NotFoundError("Cart item not found");
-      }
-      // i used tne increaseCartItemQuantity instead of updateCartItemQuantity to practice more with prisma transactions and to make the code more readable, but we can use the updateCartItemQuantity as well by passing the existing quantity + 1
       await this.cartRepository.increaseCartItemQuantity(
         cart.id,
         dto.menuItemId,
         tx,
       );
 
-      // Return the updated cart with the new item added
-      return this.syncCartSubTotal(dto.customerId, tx);
+      return this.syncCartSubTotal(customerId, tx);
     });
 
-    return this.formatCart(cart, dto.customerId);
+    return this.formatCart(cart, customerId);
   }
 
   async decreaseCartItemQuantity(
+    customerId: number,
     dto: AdjustCartItemQuantityDto,
   ): Promise<CartResponseDto> {
     const cart = await prisma.$transaction(async (tx) => {
-      // Check if the cart exists
-      let cart = await this.cartRepository.findCartByCustomerId(
-        dto.customerId,
-        tx,
-      );
-
-      if (!cart) {
-        throw new NotFoundError("Cart not found");
-      }
-      // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== dto.customerId) {
-        throw new ForbiddenError("Access denied to the specified cart");
-      }
-
-      // ensure that the item is exists in the cart
-      const existingCartItem = await this.cartRepository.findCartItem(
+      const cart = await this.getExistingCartOrThrow(customerId, tx);
+      const existingCartItem = await this.getCartItemOrThrow(
         cart.id,
         dto.menuItemId,
         tx,
       );
-      if (!existingCartItem) {
-        throw new NotFoundError("Cart item not found");
-      }
+      // Dropping from 1 to 0 removes the row instead of storing zero-quantity items.
       if (existingCartItem.quantity === 1) {
         await this.cartRepository.removeCartItem(cart.id, dto.menuItemId, tx);
       } else {
@@ -302,71 +263,35 @@ export class CartService {
         );
       }
 
-      // Return the updated cart with the new item added
-      return this.syncCartSubTotal(dto.customerId, tx);
+      return this.syncCartSubTotal(customerId, tx);
     });
 
-    return this.formatCart(cart, dto.customerId);
+    return this.formatCart(cart, customerId);
   }
 
-  async removeItemFromCart(dto: RemoveCartItemDto) {
+  async removeItemFromCart(customerId: number, dto: RemoveCartItemDto) {
     const cart = await prisma.$transaction(async (tx) => {
-      // Check if the cart exists
-      let cart = await this.cartRepository.findCartByCustomerId(
-        dto.customerId,
-        tx,
-      );
-
-      if (!cart) {
-        throw new NotFoundError("Cart not found");
-      }
-      // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== dto.customerId) {
-        throw new ForbiddenError("Access denied to the specified cart");
-      }
-
-      // ensure that the item is exists in the cart
-      const existingCartItem = await this.cartRepository.findCartItem(
-        cart.id,
-        dto.menuItemId,
-        tx,
-      );
-      if (!existingCartItem) {
-        throw new NotFoundError("Cart item not found");
-      }
+      const cart = await this.getExistingCartOrThrow(customerId, tx);
+      await this.getCartItemOrThrow(cart.id, dto.menuItemId, tx);
 
       await this.cartRepository.removeCartItem(cart.id, dto.menuItemId, tx);
 
-      // Return the updated cart with the new item added
-      return this.syncCartSubTotal(dto.customerId, tx);
+      return this.syncCartSubTotal(customerId, tx);
     });
 
-    return this.formatCart(cart, dto.customerId);
+    return this.formatCart(cart, customerId);
   }
 
-  async clearCart(dto: ClearCartDto) {
+  async clearCart(customerId: number) {
     const cart = await prisma.$transaction(async (tx) => {
-      // Check if the cart exists
-      let cart = await this.cartRepository.findCartByCustomerId(
-        dto.customerId,
-        tx,
-      );
-
-      if (!cart) {
-        throw new NotFoundError("Cart not found");
-      }
-      // Ensure that the cart belongs to the customer making the request
-      if (cart.customerId !== dto.customerId) {
-        throw new ForbiddenError("Access denied to the specified cart");
-      }
+      const cart = await this.getExistingCartOrThrow(customerId, tx);
 
       await this.cartRepository.clearCart(cart.id, tx);
 
-      // Return the updated cart with the new item added
-      return this.syncCartSubTotal(dto.customerId, tx);
+      return this.syncCartSubTotal(customerId, tx);
     });
 
-    return this.formatCart(cart, dto.customerId);
+    return this.formatCart(cart, customerId);
   }
 
   async checkoutCart(cartId: number) {}
