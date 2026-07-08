@@ -39,6 +39,7 @@ async function seedBulkCustomers(count: number, passwordHash: string) {
     return {
       usersCount: 0,
       customersCount: 0,
+      addressesCount: 0,
     };
   }
 
@@ -46,6 +47,7 @@ async function seedBulkCustomers(count: number, passwordHash: string) {
     const sequence = String(index + 1).padStart(4, "0");
 
     return {
+      sequence,
       name: `Seed Customer ${sequence}`,
       email: `seed.customer${sequence}@foodlify.demo`,
       phone: `0597${String(index + 1).padStart(6, "0")}`,
@@ -88,9 +90,51 @@ async function seedBulkCustomers(count: number, passwordHash: string) {
     skipDuplicates: true,
   });
 
+  const customers = await prisma.customer.findMany({
+    where: {
+      user: {
+        email: {
+          in: bulkUsers.map((user) => user.email),
+        },
+      },
+    },
+    select: {
+      id: true,
+      user: {
+        select: {
+          email: true,
+        },
+      },
+    },
+  });
+
+  const userProfileByEmail = new Map(
+    bulkUsers.map((user) => [user.email, user] as const),
+  );
+
+  const createdAddresses = await Promise.all(
+    customers.map(async (customer) => {
+      const profile = userProfileByEmail.get(customer.user.email);
+
+      if (!profile) {
+        return null;
+      }
+
+      return findOrCreateCustomerAddress({
+        customerId: customer.id,
+        street: `Seed Street ${profile.sequence}`,
+        city: "Gaza",
+        buildingNo: profile.sequence,
+        postalCode: `10${profile.sequence}`,
+        governorate: "Gaza",
+      });
+    }),
+  );
+
   return {
     usersCount: users.length,
     customersCount: users.length,
+    addressesCount: createdAddresses.filter(Boolean).length,
   };
 }
 
@@ -388,6 +432,7 @@ async function main() {
   console.log(
     `Bulk seeded customers: ${bulkCustomerResult.customersCount} (SEED_CUSTOMER_COUNT=${BULK_CUSTOMER_COUNT})`,
   );
+  console.log(`Bulk seeded customer addresses: ${bulkCustomerResult.addressesCount}`);
 }
 
 main()
