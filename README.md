@@ -197,7 +197,7 @@ For local development before the JWT login flow is ready, the backend can accept
 
 ## 📊ERD
 
-![ERD](docs/erd.png)
+See the full ER Diagram in [docs/erd.md](docs/erd.md).
 
 <!-- Include the Entity Relationship Diagram (ERD) here. You can embed an image or link to it. -->
 
