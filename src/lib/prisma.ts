@@ -12,13 +12,13 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({
     connectionString: process.env.DATABASE_URL,
   }),
-  // log: [{ emit: "event", level: "query" }, "warn", "error"],
+  log: [{ emit: "event", level: "query" }, "warn", "error"],
 });
 
-// prisma.$on("query", (e) => {
-//   console.log("SQL:", e.query);
-//   console.log("Params:", e.params);
-//   console.log("Duration:", e.duration, "ms");
-// });
+prisma.$on("query", (e) => {
+  console.log("SQL:", e.query);
+  console.log("Params:", e.params);
+  console.log("Duration:", e.duration, "ms");
+});
 
 export default prisma;
