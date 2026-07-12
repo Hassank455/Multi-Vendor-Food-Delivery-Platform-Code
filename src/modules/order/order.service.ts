@@ -22,7 +22,7 @@ import { PaymentMethod, OrderStatus } from "../../generated/prisma/client";
 import { CartRepository } from "../cart/cart.repository";
 import prisma from "../../lib/prisma";
 import { LoggerService } from "../../services/logger.service";
-import type { Prisma } from "../../generated/prisma/client";
+import { Prisma } from "../../generated/prisma/client";
 import { CustomerAddressRepo } from "../customer_address/customer_address.repo";
 import { buildPaginationMeta } from "../../common/pagination";
 const logger = new LoggerService("order");
@@ -61,11 +61,10 @@ export class OrderService {
 
       //TODO: Validate Inventory / Stock
 
-      const orderItems = this.buildOrderItems(cart);
-      const orderItemsData: CreateOrderItemInput[] = orderItems.map((item) => ({
+      const orderItemsData: CreateOrderItemInput[] = cart.items.map((item) => ({
         menuItemId: item.menuItemId,
         quantity: item.quantity,
-        price: item.unitPrice,
+        price: item.price,
       }));
 
       const createdOrder = await this.orderRepo.createOrder(
@@ -73,7 +72,7 @@ export class OrderService {
         dto.customerAddressId,
         restaurantId,
         dto.paymentMethod,
-        Number(cart.subTotal),
+        cart.subTotal,
         tx,
       );
 
@@ -87,7 +86,7 @@ export class OrderService {
 
       await this.orderRepo.createTransaction(
         createdOrder.id,
-        Number(cart.subTotal),
+        cart.subTotal,
         dto.paymentMethod,
         dto.paymentMethod === PaymentMethod.CASH
           ? "Cash payment on delivery"
@@ -155,16 +154,6 @@ export class OrderService {
     }
 
     return customerAddress;
-  }
-
-  private buildOrderItems(cart: CartForCheckout): PreparedOrderItem[] {
-    return cart.items.map((item) => ({
-      menuItemId: item.menuItemId,
-      name: item.menuItem.name,
-      quantity: item.quantity,
-      unitPrice: item.price,
-      totalPrice: item.quantity * item.price,
-    }));
   }
 
   // ============== GET CUSTOMER ORDERS =====================
@@ -245,7 +234,7 @@ export class OrderService {
   private mapPreparedOrderItem(item: {
     menuItemId: number;
     quantity: number;
-    price: number;
+    price: Prisma.Decimal;
     menuItem: {
       name: string;
     };
@@ -255,7 +244,7 @@ export class OrderService {
       name: item.menuItem.name,
       quantity: item.quantity,
       unitPrice: Number(item.price),
-      totalPrice: item.quantity * Number(item.price),
+      totalPrice: Number(item.price.mul(item.quantity)),
     };
   }
 
@@ -574,15 +563,17 @@ export class OrderService {
       name: item.menuItem.name,
       quantity: item.quantity,
       unitPrice: Number(item.price),
-      totalPrice: item.quantity * Number(item.price),
+      totalPrice: Number(item.price.mul(item.quantity)),
       isAvailable: item.menuItem.isAvailable,
     }));
 
-    const subTotal = Number(cart.subTotal);
-    const discountAmount = 0;
-    const deliveryFee = 0;
-    const taxAmount = 0;
-    const total = subTotal - discountAmount + deliveryFee + taxAmount;
+    const discountAmount = new Prisma.Decimal(0);
+    const deliveryFee = new Prisma.Decimal(0);
+    const taxAmount = new Prisma.Decimal(0);
+    const total = cart.subTotal
+      .minus(discountAmount)
+      .plus(deliveryFee)
+      .plus(taxAmount);
 
     return {
       restaurant: {
@@ -600,11 +591,11 @@ export class OrderService {
       paymentMethod: dto.paymentMethod,
       items,
       pricing: {
-        subTotal,
-        discountAmount,
-        deliveryFee,
-        taxAmount,
-        total,
+        subTotal: Number(cart.subTotal),
+        discountAmount: Number(discountAmount),
+        deliveryFee: Number(deliveryFee),
+        taxAmount: Number(taxAmount),
+        total: Number(total),
       },
     };
   }

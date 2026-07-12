@@ -9,14 +9,19 @@ import {
   CartResponseDto,
   RemoveCartItemDto,
 } from "./cart.dto";
-import type { Prisma } from "../../generated/prisma/client";
+import { Prisma } from "../../generated/prisma/client";
 
 type PrismaTransaction = Prisma.TransactionClient;
 export class CartService {
   constructor(private cartRepository: CartRepository) {}
 
-  private calculateSubTotal(items: Array<{ quantity: number; price: number }>) {
-    return items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  private calculateSubTotal(
+    items: Array<{ quantity: number; price: Prisma.Decimal }>,
+  ): Prisma.Decimal {
+    return items.reduce(
+      (sum, item) => sum.plus(item.price.mul(item.quantity)),
+      new Prisma.Decimal(0),
+    );
   }
 
   private async syncCartSubTotal(customerId: number, tx: PrismaTransaction) {
@@ -29,7 +34,9 @@ export class CartService {
     const subTotal = this.calculateSubTotal(cart.items);
     // When the last item is removed, the cart should no longer point to a restaurant.
     const restaurantId =
-      cart.items.length > 0 ? (cart.restaurantId ?? cart.items[0].menuItem.restaurantId) : null;
+      cart.items.length > 0
+        ? (cart.restaurantId ?? cart.items[0].menuItem.restaurantId)
+        : null;
 
     await this.cartRepository.updateCart(
       cart.id,
@@ -61,8 +68,8 @@ export class CartService {
       menuItemId: item.menuItemId,
       name: item.menuItem.name,
       quantity: item.quantity,
-      unitPrice: item.price,
-      totalPrice: item.quantity * item.price,
+      unitPrice: Number(item.price),
+      totalPrice: Number(item.price.mul(item.quantity)),
       isAvailable: item.menuItem.isAvailable,
     }));
 

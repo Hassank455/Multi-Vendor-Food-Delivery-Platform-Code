@@ -21,7 +21,7 @@ export class OrderRepo {
     customerAddressId: number,
     restaurantId: number,
     paymentMethod: PaymentMethod,
-    totalPrice: number,
+    totalPrice: Prisma.Decimal,
     tx?: PrismaTransaction,
   ) {
     return await this.db(tx).order.create({
@@ -65,7 +65,7 @@ export class OrderRepo {
 
   async createTransaction(
     orderId: number,
-    amount: number,
+    amount: Prisma.Decimal,
     method: PaymentMethod,
     details?: string,
     tx?: PrismaTransaction,

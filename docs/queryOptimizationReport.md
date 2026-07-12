@@ -35,3 +35,58 @@ Relationships were generated deterministically to ensure:
 - Cart subtotals and order totals match their related items.
 
 After generating the dataset, PostgreSQL statistics were refreshed using `ANALYZE` to ensure that the query planner had accurate table statistics.
+
+---
+
+## Cart Module
+
+### Function Name: `findCartByCustomerId`
+
+**Purpose:**  
+Fetch the cart associated with a specific customer.
+
+**Repository Method:**
+
+```ts
+async findCartByCustomerId(
+  customerId: number,
+  tx?: PrismaTransaction,
+) {
+  return this.db(tx).cart.findUnique({
+    where: {
+      customerId,
+    },
+  });
+}
+```
+
+**Generated SQL:**
+
+```sql
+SELECT
+    "id",
+    "customerId",
+    "restaurantId",
+    "subTotal"
+FROM "Cart"
+WHERE "customerId" = $1
+LIMIT 1;
+```
+
+**Time Before Optimization:**  
+—
+
+The query was already optimized before testing because `customerId` was defined as a unique column.
+
+**Optimization Technique:**
+
+- Used `findUnique()` since each customer can own only one cart, allowing PostgreSQL to perform a direct lookup.
+- Leveraged the existing unique index on `customerId`, enabling an efficient **Index Scan** instead of a sequential table scan.
+- Added an index on `restaurantId` to optimize queries that filter or join carts by restaurant. This index is not used by this query but improves other cart-related operations such as retrieving all carts for a specific restaurant.
+
+**Time After Optimization:**  
+Median: `0.200 ms`  
+Average: `0.209 ms`
+
+**Execution Plan:**  
+`Index Scan using Cart_customerId_key`

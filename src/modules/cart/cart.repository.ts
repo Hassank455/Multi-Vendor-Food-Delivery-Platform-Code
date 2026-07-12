@@ -51,7 +51,7 @@ export class CartRepository {
     cartId: number,
     menuItemId: number,
     quantity: number,
-    price: number,
+    price: Prisma.Decimal,
     tx?: PrismaTransaction,
   ) {
     return await this.db(tx).cartItem.create({
@@ -148,7 +148,7 @@ export class CartRepository {
 
   async updateCart(
     cartId: number,
-    data: { subTotal?: number; restaurantId?: number | null },
+    data: { subTotal?: Prisma.Decimal; restaurantId?: number | null },
     tx?: PrismaTransaction,
   ) {
     return await this.db(tx).cart.update({

@@ -45,7 +45,7 @@ export class MenuRepository {
       id: menuItem.id,
       name: menuItem.name,
       description: menuItem.description,
-      price: menuItem.price,
+      price: Number(menuItem.price),
       isAvailable: menuItem.isAvailable,
       restaurantId: menuItem.restaurantId,
       category: {
@@ -149,7 +149,7 @@ export class MenuRepository {
     menuItemId: number,
     dto: UpdateMenuItemDto,
   ): Promise<MenuItemDto> {
-    return await prisma.menuItem.update({
+    const menuItem = await prisma.menuItem.update({
       where: {
         id: menuItemId,
         deletedAt: null,
@@ -183,6 +183,11 @@ export class MenuRepository {
         },
       },
     });
+
+    return {
+      ...menuItem,
+      price: Number(menuItem.price),
+    };
   }
 
   async findMenuItemByRestaurantId(restaurantId: number, menuItemId: number) {
