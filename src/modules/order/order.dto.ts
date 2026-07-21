@@ -1,4 +1,5 @@
 import { PaymentMethod, OrderStatus } from "../../generated/prisma/enums";
+import type { Prisma } from "../../generated/prisma/client";
 import { PaginationMetaDto, PaginationQueryDto } from "../../common/pagination";
 
 export interface PlaceOrderDto {
@@ -9,11 +10,11 @@ export interface PlaceOrderDto {
 export interface CartItemForCheckout {
   menuItemId: number;
   quantity: number;
-  price: number;
+  price: Prisma.Decimal;
   menuItem: {
     id: number;
     name: string;
-    price: number;
+    price: Prisma.Decimal;
     isAvailable: boolean;
     restaurantId: number;
   };
@@ -23,7 +24,7 @@ export interface CartForCheckout {
   id: number;
   customerId: number;
   restaurantId: number | null;
-  subTotal: number;
+  subTotal: Prisma.Decimal;
   items: CartItemForCheckout[];
 }
 
@@ -38,7 +39,7 @@ export interface PreparedOrderItem {
 export interface CreateOrderItemInput {
   menuItemId: number;
   quantity: number;
-  price: number;
+  price: Prisma.Decimal;
 }
 
 export interface CustomerOrderListItemDto {

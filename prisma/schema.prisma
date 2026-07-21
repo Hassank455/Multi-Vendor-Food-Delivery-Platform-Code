@@ -176,7 +176,7 @@ model MenuItem {
   description  String
   restaurantId Int
   categoryId   Int
-  price        Float
+  price        Decimal @db.Decimal(10, 2)
   isAvailable  Boolean @default(true)
   deletedAt    DateTime?
 
@@ -224,7 +224,6 @@ model Cart {
   items      CartItem[]
   cartEvents CartEvent[]
 
-  @@index([customerId])
   @@index([restaurantId])
 }
 
@@ -245,7 +244,7 @@ model CartItem {
   cartId     Int   @map("cart_id")
   menuItemId Int   @map("menu_item_id")
   quantity   Int   @default(1)
-  price      Float
+  price      Decimal @db.Decimal(10, 2)
 
   cart     Cart     @relation(fields: [cartId], references: [id])
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
@@ -261,9 +260,9 @@ model Order {
   status             OrderStatus   @default(PENDING)
   createdAt          DateTime      @default(now())
   paymentMethod      PaymentMethod
-  totalPrice         Float
+  totalPrice         Decimal @db.Decimal(10, 2)
   discountPercentage Float?
-  priceAfterDiscount Float? // Not really needed, can be calculated on the fly
+  priceAfterDiscount Decimal? @db.Decimal(10, 2) // Not really needed, can be calculated on the fly
 
   customerAddress CustomerAddress @relation(fields: [customerAddressId], references: [id])
   restaurant      Restaurant      @relation(fields: [restaurantId], references: [id])
@@ -272,6 +271,9 @@ model Order {
   items        OrderItem[]
   transactions Transaction[]
   customer     Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, createdAt(sort: Desc)])
+  @@index([restaurantId, createdAt(sort: Desc)])
 }
 
 model OrderItem {
@@ -279,7 +281,7 @@ model OrderItem {
   orderId    Int   @map("order_id")
   menuItemId Int   @map("menu_item_id")
   quantity   Int   @map("quantity")
-  price      Float @map("snapshot_price")
+  price      Decimal @db.Decimal(10, 2) @map("snapshot_price")
 
   order    Order    @relation(fields: [orderId], references: [id])
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
@@ -307,7 +309,7 @@ model DiscountCode {
 model Transaction {
   id        Int               @id @default(autoincrement())
   orderId   Int
-  amount    Float
+  amount    Decimal @db.Decimal(10, 2)
   method    PaymentMethod
   details   String?
   status    TransactionStatus @default(PENDING)

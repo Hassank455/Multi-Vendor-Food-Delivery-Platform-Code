@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CartService } from "./cart.service";
 import { StatusCodes } from "http-status-codes";
 import asyncHandler from "../../utils/asyncHandler";
+import { ForbiddenError } from "../../errors";
 import {
   AdjustCartItemQuantityDto,
   AddToCartDto,
@@ -11,18 +12,18 @@ import {
 export class CartController {
   constructor(private cartService: CartService) {}
 
-  createCart = asyncHandler(async (req: Request, res: Response) => {
-    const { customerId } = req.body;
+  private getCustomerId(req: Request) {
+    const customerId = req.customer?.id;
 
-    const cart = await this.cartService.createCart(customerId);
+    if (!customerId) {
+      throw new ForbiddenError("Customer authentication is required");
+    }
 
-    res
-      .status(StatusCodes.CREATED)
-      .json({ data: cart, message: "Cart created successfully" });
-  });
+    return customerId;
+  }
 
   getMyCart = asyncHandler(async (req: Request, res: Response) => {
-    const customerId = req.body.customerId;
+    const customerId = this.getCustomerId(req);
     const cart = await this.cartService.getMyCart(customerId);
 
     res
@@ -31,12 +32,12 @@ export class CartController {
   });
 
   addItemToCart = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = this.getCustomerId(req);
     const dto: AddToCartDto = {
-      customerId: req.body.customerId,
       menuItemId: req.body.menuItemId,
       quantity: req.body.quantity,
     };
-    const cart = await this.cartService.addItemToCart(dto);
+    const cart = await this.cartService.addItemToCart(customerId, dto);
 
     res
       .status(StatusCodes.CREATED)
@@ -44,8 +45,8 @@ export class CartController {
   });
 
   updateCartItemQuantity = asyncHandler(async (req: Request, res: Response) => {
-    const cart = await this.cartService.updateQuantity({
-      customerId: req.body.customerId,
+    const customerId = this.getCustomerId(req);
+    const cart = await this.cartService.updateQuantity(customerId, {
       menuItemId: Number(req.params.menuItemId),
       quantity: req.body.quantity,
     });
@@ -57,12 +58,15 @@ export class CartController {
 
   increaseCartItemQuantity = asyncHandler(
     async (req: Request, res: Response) => {
+      const customerId = this.getCustomerId(req);
       const dto: AdjustCartItemQuantityDto = {
-        customerId: req.body.customerId,
         menuItemId: Number(req.params.menuItemId),
       };
 
-      const cart = await this.cartService.increaseCartItemQuantity(dto);
+      const cart = await this.cartService.increaseCartItemQuantity(
+        customerId,
+        dto,
+      );
 
       res.status(StatusCodes.OK).json({
         message: "Cart item quantity increased successfully",
@@ -73,12 +77,15 @@ export class CartController {
 
   decreaseCartItemQuantity = asyncHandler(
     async (req: Request, res: Response) => {
+      const customerId = this.getCustomerId(req);
       const dto: AdjustCartItemQuantityDto = {
-        customerId: req.body.customerId,
         menuItemId: Number(req.params.menuItemId),
       };
 
-      const cart = await this.cartService.decreaseCartItemQuantity(dto);
+      const cart = await this.cartService.decreaseCartItemQuantity(
+        customerId,
+        dto,
+      );
 
       res.status(StatusCodes.OK).json({
         message: "Cart item quantity decreased successfully",
@@ -88,12 +95,12 @@ export class CartController {
   );
 
   removeItemFromCart = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = this.getCustomerId(req);
     const dto: RemoveCartItemDto = {
-      customerId: req.body.customerId,
       menuItemId: Number(req.params.menuItemId),
     };
 
-    const cart = await this.cartService.removeItemFromCart(dto);
+    const cart = await this.cartService.removeItemFromCart(customerId, dto);
 
     res.status(StatusCodes.OK).json({
       message: "Item removed from cart successfully",
@@ -102,9 +109,8 @@ export class CartController {
   });
 
   clearCart = asyncHandler(async (req: Request, res: Response) => {
-    const cart = await this.cartService.clearCart({
-      customerId: req.body.customerId,
-    });
+    const customerId = this.getCustomerId(req);
+    const cart = await this.cartService.clearCart(customerId);
 
     res.status(StatusCodes.OK).json({
       message: "Cart cleared successfully",

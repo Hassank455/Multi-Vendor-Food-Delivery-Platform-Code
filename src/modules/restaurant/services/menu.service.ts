@@ -69,7 +69,10 @@ export class MenuService {
     );
 
     return {
-      data: menuItems,
+      data: menuItems.map((menuItem) => ({
+        ...menuItem,
+        price: Number(menuItem.price),
+      })),
       pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
@@ -115,7 +118,10 @@ export class MenuService {
       dto,
     );
 
-    return updatedMenuItem;
+    return {
+      ...updatedMenuItem,
+      price: Number(updatedMenuItem.price),
+    };
   }
 
   async updateMenuItemStatus(
@@ -151,7 +157,10 @@ export class MenuService {
       dto,
     );
 
-    return updatedMenuItem;
+    return {
+      ...updatedMenuItem,
+      price: Number(updatedMenuItem.price),
+    };
   }
 
   async deleteMenuItem(

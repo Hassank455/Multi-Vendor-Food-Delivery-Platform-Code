@@ -1,17 +1,14 @@
 export interface AddToCartDto {
-  customerId: number;
   menuItemId: number;
   quantity: number;
 }
 
 export interface UpdateCartItemQuantityDto {
-  customerId: number;
   menuItemId: number;
   quantity: number;
 }
 
 export interface AdjustCartItemQuantityDto {
-  customerId: number;
   menuItemId: number;
 }
 
@@ -33,10 +30,5 @@ export interface CartResponseDto {
 }
 
 export interface RemoveCartItemDto {
-  customerId: number;
   menuItemId: number;
-}
-
-export interface ClearCartDto {
-  customerId: number;
 }

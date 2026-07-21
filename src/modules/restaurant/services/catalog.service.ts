@@ -78,7 +78,10 @@ export class CatalogService {
     );
 
     return {
-      data: menuItems,
+      data: menuItems.map((menuItem) => ({
+        ...menuItem,
+        price: Number(menuItem.price),
+      })),
       pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }

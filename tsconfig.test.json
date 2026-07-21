@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Test files need Jest globals like describe/it/expect.
+    "types": ["node", "jest"],
+
+    // Tests are executed directly by Jest, not emitted to dist.
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}

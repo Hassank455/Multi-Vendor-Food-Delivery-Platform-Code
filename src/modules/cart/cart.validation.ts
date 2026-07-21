@@ -1,50 +1,65 @@
 import * as z from "zod";
 
+// Requests like GET /cart and DELETE /cart/clear usually do not send a body.
+const emptyShape = z.object({}).optional().default({});
+
+const getMyCartSchema = z.object({
+  body: emptyShape,
+  query: emptyShape,
+  params: emptyShape,
+});
+
 const addItemToCartSchema = z.object({
   body: z.object({
-    customerId: z.number().int().positive(),
     menuItemId: z.number().int().positive(),
     quantity: z.number().int().positive(),
   }),
+  query: z.object({}),
+  params: z.object({}),
 });
 
 const updateCartItemQuantitySchema = z.object({
   body: z.object({
-    customerId: z.number().int().positive(),
     quantity: z.number().int().min(0),
   }),
   query: z.object({}),
   params: z.object({
-    // coerce mean convert string to number
+    // coerce converts the route param from string to number before validation
     menuItemId: z.coerce.number().int().positive(),
   }),
 });
 
 const adjustCartItemQuantitySchema = z.object({
-  // we will delete the body when we implement the isAuth middleware, because we will get the customerId from the token
-  body: z.object({
-    customerId: z.number().int().positive(),
-  }),
+  // customer identity comes from isAuth, so this body stays empty on purpose
+  body: emptyShape,
+  query: emptyShape,
   params: z.object({
-    // coerce mean convert string to number
+    // coerce converts the route param from string to number before validation
     menuItemId: z.coerce.number().int().positive(),
   }),
 });
 
 const removeCartItemSchema = z.object({
-  // we will delete the body when we implement the isAuth middleware, because we will get the customerId from the token
-  body: z.object({
-    customerId: z.number().int().positive(),
-  }),
+  // customer identity comes from isAuth, so this body stays empty on purpose
+  body: emptyShape,
+  query: emptyShape,
   params: z.object({
-    // coerce mean convert string to number
+    // coerce converts the route param from string to number before validation
     menuItemId: z.coerce.number().int().positive(),
   }),
 });
 
+const clearCartSchema = z.object({
+  body: emptyShape,
+  query: emptyShape,
+  params: emptyShape,
+});
+
 export {
+  getMyCartSchema,
   addItemToCartSchema,
   updateCartItemQuantitySchema,
   adjustCartItemQuantitySchema,
   removeCartItemSchema,
+  clearCartSchema,
 };
