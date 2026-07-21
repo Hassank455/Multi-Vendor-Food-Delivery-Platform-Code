@@ -271,6 +271,9 @@ model Order {
   items        OrderItem[]
   transactions Transaction[]
   customer     Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, createdAt(sort: Desc)])
+  @@index([restaurantId, createdAt(sort: Desc)])
 }
 
 model OrderItem {
