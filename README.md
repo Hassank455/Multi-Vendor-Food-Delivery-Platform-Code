@@ -189,9 +189,15 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 
 ---
 
+## Development Auth Note
+
+For local development before the JWT login flow is ready, the backend can accept a temporary `x-customer-id` header and inject `req.customer.id` internally. This fallback is disabled by default and only works when both `ENABLE_DEV_AUTH_HEADER=true` and `NODE_ENV` is not `production`. Public API documentation still assumes Bearer authentication.
+
+---
+
 ## 📊ERD
 
-![ERD](docs/erd.png)
+See the full ER Diagram in [docs/erd.md](docs/erd.md).
 
 <!-- Include the Entity Relationship Diagram (ERD) here. You can embed an image or link to it. -->
 
@@ -513,17 +519,21 @@ Use this mode if you want the database in Docker but the API running locally wit
    pnpm install
    ```
 
-3. **Apply the existing database migrations:**
+3. **Initialize the database schema and demo data:**
 
    ```bash
-   pnpm prisma migrate deploy
+   pnpm db:init
    ```
+
+   This runs the existing Prisma migrations and then executes the demo seed.
 
 4. **Start the API locally:**
 
    ```bash
    pnpm dev
    ```
+
+   `pnpm dev` also runs `pnpm db:init` before starting `nodemon`, so the database stays ready on first startup.
 
 5. **Verify the application:**
 
@@ -532,6 +542,18 @@ Use this mode if you want the database in Docker but the API running locally wit
 ### Notes
 
 - Do not run `pnpm prisma db push` on the same Docker database if you plan to use the full Docker flow with `prisma migrate deploy`.
+- Demo seed data is created automatically only when the database does not already contain customers, restaurants, or menu items.
+- Running `pnpm db:seed` or `pnpm db:init` multiple times does not create duplicate demo rows; the seed becomes a no-op when core data already exists.
+- The demo seed creates:
+  - one restaurant owner user
+  - two customers
+  - one restaurant
+  - two menu categories
+  - five menu items ready for cart testing
+- Demo credentials created by the seed:
+  - owner: `owner@foodlify.demo`
+  - customers: `customer1@foodlify.demo`, `customer2@foodlify.demo`
+  - password for all demo accounts: `demo123456`
 - If the Docker app shows `P3005` because the database is already populated, reset the local Docker database and start again:
 
   ```bash

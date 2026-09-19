@@ -1,0 +1,2007 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Foodlify",
+    "description": "Foodlify API Documentation",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "host": "localhost:3000",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Foodlify",
+      "description": "API"
+    },
+    {
+      "name": "Customer Address",
+      "description": "Manage authenticated customer addresses"
+    },
+    {
+      "name": "Order",
+      "description": "Manage customer and restaurant order flows"
+    }
+  ],
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Provide the access token as: Bearer <token>"
+    }
+  },
+  "paths": {
+    "/api/v1/customer-addresses": {
+      "get": {
+        "tags": ["Customer Address"],
+        "summary": "List customer addresses",
+        "description": "Returns all non-deleted addresses for the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer addresses fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressListResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer addresses fetched successfully",
+                "data": [
+                  {
+                    "id": 12,
+                    "customerId": 5,
+                    "street": "Al Nasr Street",
+                    "city": "Gaza",
+                    "buildingNo": "12B",
+                    "postalCode": "00970",
+                    "governorate": "Gaza"
+                  },
+                  {
+                    "id": 13,
+                    "customerId": 5,
+                    "street": "Omar Al Mukhtar Street",
+                    "city": "Gaza",
+                    "buildingNo": null,
+                    "postalCode": null,
+                    "governorate": "Gaza"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customer Address"],
+        "summary": "Create customer address",
+        "description": "Creates a new address for the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateCustomerAddressRequest"
+            },
+            "x-examples": {
+              "fullAddress": {
+                "street": "Al Nasr Street",
+                "city": "Gaza",
+                "buildingNo": "12B",
+                "postalCode": "00970",
+                "governorate": "Gaza"
+              },
+              "withoutOptionalFields": {
+                "street": "Omar Al Mukhtar Street",
+                "city": "Gaza",
+                "governorate": "Gaza"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Customer address created successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressSingleResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address created successfully",
+                "data": {
+                  "id": 12,
+                  "customerId": 5,
+                  "street": "Al Nasr Street",
+                  "city": "Gaza",
+                  "buildingNo": "12B",
+                  "postalCode": "00970",
+                  "governorate": "Gaza"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation failed",
+                "errors": {
+                  "fieldErrors": {
+                    "street": ["String must contain at least 1 character(s)"]
+                  },
+                  "formErrors": []
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customer-addresses/{id}": {
+      "get": {
+        "tags": ["Customer Address"],
+        "summary": "Get customer address by id",
+        "description": "Returns one non-deleted address owned by the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Customer address identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer address fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressSingleResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address fetched successfully",
+                "data": {
+                  "id": 12,
+                  "customerId": 5,
+                  "street": "Al Nasr Street",
+                  "city": "Gaza",
+                  "buildingNo": "12B",
+                  "postalCode": "00970",
+                  "governorate": "Gaza"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found or not owned by the authenticated customer",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Customer Address"],
+        "summary": "Update customer address",
+        "description": "Updates one address owned by the authenticated customer. At least one mutable field must be provided.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Customer address identifier"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateCustomerAddressRequest"
+            },
+            "x-examples": {
+              "partialUpdate": {
+                "city": "Khan Younis",
+                "postalCode": "00972"
+              },
+              "singleFieldUpdate": {
+                "buildingNo": "4A"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer address updated successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerAddressSingleResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address updated successfully",
+                "data": {
+                  "id": 12,
+                  "customerId": 5,
+                  "street": "Al Nasr Street",
+                  "city": "Khan Younis",
+                  "buildingNo": "4A",
+                  "postalCode": "00972",
+                  "governorate": "Gaza"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Validation failed",
+                "errors": {
+                  "fieldErrors": {},
+                  "formErrors": [
+                    "At least one field must be provided for update"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found or not owned by the authenticated customer",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Customer Address"],
+        "summary": "Delete customer address",
+        "description": "Soft deletes one address owned by the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Customer address identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer address deleted successfully",
+            "schema": {
+              "$ref": "#/definitions/MessageOnlyResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address deleted successfully"
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Address not found or not owned by the authenticated customer",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders": {
+      "post": {
+        "tags": ["Order"],
+        "summary": "Place order",
+        "description": "Creates a new order for the authenticated customer using the current cart.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PlaceOrderRequest"
+            },
+            "x-examples": {
+              "cashOrder": {
+                "customerAddressId": 1,
+                "paymentMethod": "CASH"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Order placed successfully",
+            "schema": {
+              "$ref": "#/definitions/PlacedOrderResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Order placed successfully",
+                "data": {
+                  "id": 6,
+                  "customerId": 2,
+                  "customerAddressId": 1,
+                  "restaurantId": 1,
+                  "status": "PENDING",
+                  "createdAt": "2026-05-18T10:30:00.000Z",
+                  "paymentMethod": "CASH",
+                  "totalPrice": 119,
+                  "discountPercentage": null,
+                  "priceAfterDiscount": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or cart/order business rule failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Referenced customer address or cart resources not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer address not found"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get customer orders",
+        "description": "Returns all orders for the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer orders fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerOrdersListResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer orders fetched successfully",
+                "data": [
+                  {
+                    "id": 6,
+                    "status": "PENDING",
+                    "paymentMethod": "CASH",
+                    "totalPrice": 119,
+                    "createdAt": "2026-05-18T10:30:00.000Z",
+                    "restaurant": {
+                      "id": 1,
+                      "name": "KFC"
+                    },
+                    "items": [
+                      {
+                        "menuItemId": 7,
+                        "name": "Burger",
+                        "quantity": 2,
+                        "unitPrice": 25,
+                        "totalPrice": 50
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{id}": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get customer order by id",
+        "description": "Returns one order owned by the authenticated customer.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Order identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer order fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/CustomerOrderDetailsResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer order fetched successfully",
+                "data": {
+                  "id": 6,
+                  "status": "PENDING",
+                  "paymentMethod": "CASH",
+                  "totalPrice": 119,
+                  "createdAt": "2026-05-18T10:30:00.000Z",
+                  "restaurant": {
+                    "id": 1,
+                    "name": "KFC"
+                  },
+                  "customerAddress": {
+                    "id": 1,
+                    "street": "Al Nasr Street",
+                    "city": "Gaza",
+                    "buildingNo": "12B",
+                    "postalCode": "00970",
+                    "governorate": "Gaza"
+                  },
+                  "items": [
+                    {
+                      "menuItemId": 7,
+                      "name": "Burger",
+                      "quantity": 2,
+                      "unitPrice": 25,
+                      "totalPrice": 50
+                    }
+                  ],
+                  "transactions": [
+                    {
+                      "id": 11,
+                      "amount": 119,
+                      "method": "CASH",
+                      "details": "Cash payment on delivery",
+                      "createdAt": "2026-05-18T10:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Please provide the authorization header"
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Customer authentication is required"
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Order not found"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/{id}/cancel": {
+      "patch": {
+        "tags": ["Order"],
+        "summary": "Cancel customer order",
+        "description": "Cancels an order owned by the authenticated customer if its status still allows cancellation.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Order identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order cancelled successfully",
+            "schema": {
+              "$ref": "#/definitions/CancelledCustomerOrderResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Order cancelled successfully",
+                "data": {
+                  "id": 6,
+                  "status": "CANCELLED",
+                  "paymentMethod": "CASH",
+                  "totalPrice": 119,
+                  "createdAt": "2026-05-18T10:30:00.000Z",
+                  "restaurant": {
+                    "id": 1,
+                    "name": "KFC"
+                  },
+                  "customerAddress": {
+                    "id": 1,
+                    "street": "Al Nasr Street",
+                    "city": "Gaza",
+                    "buildingNo": "12B",
+                    "postalCode": "00970",
+                    "governorate": "Gaza"
+                  },
+                  "items": [
+                    {
+                      "menuItemId": 7,
+                      "name": "Burger",
+                      "quantity": 2,
+                      "unitPrice": 25,
+                      "totalPrice": 50
+                    }
+                  ],
+                  "transactions": [
+                    {
+                      "id": 11,
+                      "amount": 119,
+                      "method": "CASH",
+                      "details": "Cash payment on delivery",
+                      "createdAt": "2026-05-18T10:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or order cannot be cancelled in its current status",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a customer token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/restaurant": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get restaurant orders",
+        "description": "Returns paginated orders for the authenticated restaurant owner. Supports optional status filtering.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "PREPARING",
+              "OUT_FOR_DELIVERY",
+              "DELIVERED",
+              "CANCELLED"
+            ],
+            "description": "Optional order status filter"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "default": 1,
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10,
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restaurant orders fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/RestaurantOrderPaginatedResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Restaurant orders fetched successfully",
+                "data": [
+                  {
+                    "id": 6,
+                    "status": "CONFIRMED",
+                    "paymentMethod": "CASH",
+                    "totalPrice": 119,
+                    "createdAt": "2026-05-18T10:30:00.000Z",
+                    "customer": {
+                      "id": 2,
+                      "name": "Ahmad",
+                      "phone": "0599123456"
+                    },
+                    "items": [
+                      {
+                        "menuItemId": 7,
+                        "name": "Burger",
+                        "quantity": 2,
+                        "unitPrice": 25,
+                        "totalPrice": 50
+                      }
+                    ]
+                  }
+                ],
+                "pagination": {
+                  "page": 1,
+                  "limit": 10,
+                  "total": 24,
+                  "totalPages": 3,
+                  "hasNextPage": true,
+                  "hasPreviousPage": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a restaurant owner token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Restaurant not found for this user",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/restaurant/{id}": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get restaurant order details",
+        "description": "Returns one order owned by the authenticated restaurant owner.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Order identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restaurant order details fetched successfully",
+            "schema": {
+              "$ref": "#/definitions/RestaurantOrderDetailsResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Restaurant order details fetched successfully",
+                "data": {
+                  "id": 6,
+                  "status": "CONFIRMED",
+                  "paymentMethod": "CASH",
+                  "totalPrice": 119,
+                  "createdAt": "2026-05-18T10:30:00.000Z",
+                  "customer": {
+                    "id": 2,
+                    "name": "Ahmad",
+                    "phone": "0599123456",
+                    "email": "ahmad@example.com"
+                  },
+                  "customerAddress": {
+                    "id": 1,
+                    "street": "Al Nasr Street",
+                    "city": "Gaza",
+                    "buildingNo": "12B",
+                    "postalCode": "00970",
+                    "governorate": "Gaza"
+                  },
+                  "items": [
+                    {
+                      "menuItemId": 7,
+                      "name": "Burger",
+                      "quantity": 2,
+                      "unitPrice": 25,
+                      "totalPrice": 50
+                    }
+                  ],
+                  "transactions": [
+                    {
+                      "id": 11,
+                      "amount": 119,
+                      "method": "CASH",
+                      "details": "Cash payment on delivery",
+                      "createdAt": "2026-05-18T10:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a restaurant owner token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/restaurant/{id}/status": {
+      "patch": {
+        "tags": ["Order"],
+        "summary": "Update restaurant order status",
+        "description": "Updates the status of an order owned by the authenticated restaurant owner according to the allowed status transition rules.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Order identifier"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateRestaurantOrderStatusRequest"
+            },
+            "x-examples": {
+              "confirmOrder": {
+                "status": "CONFIRMED"
+              },
+              "prepareOrder": {
+                "status": "PREPARING"
+              },
+              "dispatchOrder": {
+                "status": "OUT_FOR_DELIVERY"
+              },
+              "deliverOrder": {
+                "status": "DELIVERED"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order status updated successfully",
+            "schema": {
+              "$ref": "#/definitions/UpdatedRestaurantOrderStatusResponse"
+            },
+            "examples": {
+              "application/json": {
+                "message": "Order status updated successfully",
+                "data": {
+                  "id": 6,
+                  "status": "PREPARING",
+                  "paymentMethod": "CASH",
+                  "totalPrice": 119,
+                  "createdAt": "2026-05-18T10:30:00.000Z",
+                  "customer": {
+                    "id": 2,
+                    "name": "Ahmad",
+                    "phone": "0599123456",
+                    "email": "ahmad@example.com"
+                  },
+                  "customerAddress": {
+                    "id": 1,
+                    "street": "Al Nasr Street",
+                    "city": "Gaza",
+                    "buildingNo": "12B",
+                    "postalCode": "00970",
+                    "governorate": "Gaza"
+                  },
+                  "items": [
+                    {
+                      "menuItemId": 7,
+                      "name": "Burger",
+                      "quantity": 2,
+                      "unitPrice": 25,
+                      "totalPrice": 50
+                    }
+                  ],
+                  "transactions": [
+                    {
+                      "id": 11,
+                      "amount": 119,
+                      "method": "CASH",
+                      "details": "Cash payment on delivery",
+                      "createdAt": "2026-05-18T10:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or invalid status transition",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "401": {
+            "description": "Missing or invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "403": {
+            "description": "Authenticated token is not a restaurant owner token",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "CustomerAddress": {
+      "type": "object",
+      "required": ["id", "customerId", "street", "city", "governorate"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 12
+        },
+        "customerId": {
+          "type": "integer",
+          "format": "int32",
+          "example": 5
+        },
+        "street": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Al Nasr Street"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        },
+        "buildingNo": {
+          "type": "string",
+          "maxLength": 50,
+          "x-nullable": true,
+          "example": "12B"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20,
+          "x-nullable": true,
+          "example": "00970"
+        },
+        "governorate": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        }
+      }
+    },
+    "CreateCustomerAddressRequest": {
+      "type": "object",
+      "required": ["street", "city", "governorate"],
+      "properties": {
+        "street": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Al Nasr Street"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        },
+        "buildingNo": {
+          "type": "string",
+          "maxLength": 50,
+          "x-nullable": true,
+          "example": "12B"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20,
+          "x-nullable": true,
+          "example": "00970"
+        },
+        "governorate": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        }
+      }
+    },
+    "UpdateCustomerAddressRequest": {
+      "type": "object",
+      "description": "Provide at least one mutable field.",
+      "minProperties": 1,
+      "properties": {
+        "street": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Omar Al Mukhtar Street"
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Khan Younis"
+        },
+        "buildingNo": {
+          "type": "string",
+          "maxLength": 50,
+          "x-nullable": true,
+          "example": "4A"
+        },
+        "postalCode": {
+          "type": "string",
+          "maxLength": 20,
+          "x-nullable": true,
+          "example": "00972"
+        },
+        "governorate": {
+          "type": "string",
+          "maxLength": 255,
+          "example": "Gaza"
+        }
+      }
+    },
+    "CustomerAddressListResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer addresses fetched successfully"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomerAddress"
+          }
+        }
+      }
+    },
+    "CustomerAddressSingleResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer address fetched successfully"
+        },
+        "data": {
+          "$ref": "#/definitions/CustomerAddress"
+        }
+      }
+    },
+    "MessageOnlyResponse": {
+      "type": "object",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer address deleted successfully"
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "required": ["message"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer address not found"
+        },
+        "errors": {
+          "type": "object",
+          "description": "Optional validation or structured error details",
+          "x-nullable": true
+        }
+      }
+    },
+    "ValidationErrorResponse": {
+      "type": "object",
+      "required": ["message", "errors"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Validation failed"
+        },
+        "errors": {
+          "type": "object",
+          "properties": {
+            "formErrors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "fieldErrors": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "PlaceOrderRequest": {
+      "type": "object",
+      "required": ["customerAddressId", "paymentMethod"],
+      "properties": {
+        "customerAddressId": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1,
+          "example": 1
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["CASH", "CARD"],
+          "example": "CASH"
+        }
+      }
+    },
+    "UpdateRestaurantOrderStatusRequest": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CONFIRMED",
+            "PREPARING",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED"
+          ],
+          "example": "CONFIRMED"
+        }
+      }
+    },
+    "PreparedOrderItem": {
+      "type": "object",
+      "required": ["menuItemId", "name", "quantity", "unitPrice", "totalPrice"],
+      "properties": {
+        "menuItemId": {
+          "type": "integer",
+          "format": "int32",
+          "example": 7
+        },
+        "name": {
+          "type": "string",
+          "example": "Burger"
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32",
+          "example": 2
+        },
+        "unitPrice": {
+          "type": "number",
+          "format": "float",
+          "example": 25
+        },
+        "totalPrice": {
+          "type": "number",
+          "format": "float",
+          "example": 50
+        }
+      }
+    },
+    "RestaurantSummary": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 1
+        },
+        "name": {
+          "type": "string",
+          "example": "KFC"
+        }
+      }
+    },
+    "CustomerSummary": {
+      "type": "object",
+      "required": ["id", "name", "phone"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 2
+        },
+        "name": {
+          "type": "string",
+          "example": "Ahmad"
+        },
+        "phone": {
+          "type": "string",
+          "example": "0599123456"
+        }
+      }
+    },
+    "CustomerDetails": {
+      "type": "object",
+      "required": ["id", "name", "phone", "email"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 2
+        },
+        "name": {
+          "type": "string",
+          "example": "Ahmad"
+        },
+        "phone": {
+          "type": "string",
+          "example": "0599123456"
+        },
+        "email": {
+          "type": "string",
+          "example": "ahmad@example.com"
+        }
+      }
+    },
+    "OrderCustomerAddress": {
+      "type": "object",
+      "required": [
+        "id",
+        "street",
+        "city",
+        "buildingNo",
+        "postalCode",
+        "governorate"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 1
+        },
+        "street": {
+          "type": "string",
+          "example": "Al Nasr Street"
+        },
+        "city": {
+          "type": "string",
+          "example": "Gaza"
+        },
+        "buildingNo": {
+          "type": "string",
+          "example": "12B"
+        },
+        "postalCode": {
+          "type": "string",
+          "example": "00970"
+        },
+        "governorate": {
+          "type": "string",
+          "example": "Gaza"
+        }
+      }
+    },
+    "OrderTransaction": {
+      "type": "object",
+      "required": ["id", "amount", "method", "createdAt"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 11
+        },
+        "amount": {
+          "type": "number",
+          "format": "float",
+          "example": 119
+        },
+        "method": {
+          "type": "string",
+          "enum": ["CASH", "CARD"],
+          "example": "CASH"
+        },
+        "details": {
+          "type": "string",
+          "x-nullable": true,
+          "example": "Cash payment on delivery"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-05-18T10:30:00.000Z"
+        }
+      }
+    },
+    "CustomerOrderListItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "paymentMethod",
+        "totalPrice",
+        "createdAt",
+        "restaurant",
+        "items"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 6
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CONFIRMED",
+            "PREPARING",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED"
+          ],
+          "example": "PENDING"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["CASH", "CARD"],
+          "example": "CASH"
+        },
+        "totalPrice": {
+          "type": "number",
+          "format": "float",
+          "example": 119
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-05-18T10:30:00.000Z"
+        },
+        "restaurant": {
+          "$ref": "#/definitions/RestaurantSummary"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreparedOrderItem"
+          }
+        }
+      }
+    },
+    "CustomerOrderDetails": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "paymentMethod",
+        "totalPrice",
+        "createdAt",
+        "restaurant",
+        "customerAddress",
+        "items",
+        "transactions"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 6
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CONFIRMED",
+            "PREPARING",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED"
+          ],
+          "example": "PENDING"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["CASH", "CARD"],
+          "example": "CASH"
+        },
+        "totalPrice": {
+          "type": "number",
+          "format": "float",
+          "example": 119
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-05-18T10:30:00.000Z"
+        },
+        "restaurant": {
+          "$ref": "#/definitions/RestaurantSummary"
+        },
+        "customerAddress": {
+          "$ref": "#/definitions/OrderCustomerAddress"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreparedOrderItem"
+          }
+        },
+        "transactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrderTransaction"
+          }
+        }
+      }
+    },
+    "RestaurantOrderListItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "paymentMethod",
+        "totalPrice",
+        "createdAt",
+        "customer",
+        "items"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 6
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CONFIRMED",
+            "PREPARING",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED"
+          ],
+          "example": "CONFIRMED"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["CASH", "CARD"],
+          "example": "CASH"
+        },
+        "totalPrice": {
+          "type": "number",
+          "format": "float",
+          "example": 119
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-05-18T10:30:00.000Z"
+        },
+        "customer": {
+          "$ref": "#/definitions/CustomerSummary"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreparedOrderItem"
+          }
+        }
+      }
+    },
+    "RestaurantOrderDetails": {
+      "type": "object",
+      "required": [
+        "id",
+        "status",
+        "paymentMethod",
+        "totalPrice",
+        "createdAt",
+        "customer",
+        "customerAddress",
+        "items",
+        "transactions"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32",
+          "example": 6
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "CONFIRMED",
+            "PREPARING",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED"
+          ],
+          "example": "CONFIRMED"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["CASH", "CARD"],
+          "example": "CASH"
+        },
+        "totalPrice": {
+          "type": "number",
+          "format": "float",
+          "example": 119
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-05-18T10:30:00.000Z"
+        },
+        "customer": {
+          "$ref": "#/definitions/CustomerDetails"
+        },
+        "customerAddress": {
+          "$ref": "#/definitions/OrderCustomerAddress"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreparedOrderItem"
+          }
+        },
+        "transactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrderTransaction"
+          }
+        }
+      }
+    },
+    "PaginationMeta": {
+      "type": "object",
+      "required": [
+        "page",
+        "limit",
+        "total",
+        "totalPages",
+        "hasNextPage",
+        "hasPreviousPage"
+      ],
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int32",
+          "example": 1
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32",
+          "example": 10
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32",
+          "example": 24
+        },
+        "totalPages": {
+          "type": "integer",
+          "format": "int32",
+          "example": 3
+        },
+        "hasNextPage": {
+          "type": "boolean",
+          "example": true
+        },
+        "hasPreviousPage": {
+          "type": "boolean",
+          "example": false
+        }
+      }
+    },
+    "RestaurantOrderPaginatedResponse": {
+      "type": "object",
+      "required": ["message", "data", "pagination"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Restaurant orders fetched successfully"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RestaurantOrderListItem"
+          }
+        },
+        "pagination": {
+          "$ref": "#/definitions/PaginationMeta"
+        }
+      }
+    },
+    "PlacedOrderResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Order placed successfully"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int32",
+              "example": 6
+            },
+            "customerId": {
+              "type": "integer",
+              "format": "int32",
+              "example": 2
+            },
+            "customerAddressId": {
+              "type": "integer",
+              "format": "int32",
+              "example": 1
+            },
+            "restaurantId": {
+              "type": "integer",
+              "format": "int32",
+              "example": 1
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "CONFIRMED",
+                "PREPARING",
+                "OUT_FOR_DELIVERY",
+                "DELIVERED",
+                "CANCELLED"
+              ],
+              "example": "PENDING"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2026-05-18T10:30:00.000Z"
+            },
+            "paymentMethod": {
+              "type": "string",
+              "enum": ["CASH", "CARD"],
+              "example": "CASH"
+            },
+            "totalPrice": {
+              "type": "number",
+              "format": "float",
+              "example": 119
+            },
+            "discountPercentage": {
+              "type": "number",
+              "format": "float",
+              "x-nullable": true,
+              "example": null
+            },
+            "priceAfterDiscount": {
+              "type": "number",
+              "format": "float",
+              "x-nullable": true,
+              "example": null
+            }
+          }
+        }
+      }
+    },
+    "CustomerOrdersListResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer orders fetched successfully"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomerOrderListItem"
+          }
+        }
+      }
+    },
+    "CustomerOrderDetailsResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Customer order fetched successfully"
+        },
+        "data": {
+          "$ref": "#/definitions/CustomerOrderDetails"
+        }
+      }
+    },
+    "CancelledCustomerOrderResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Order cancelled successfully"
+        },
+        "data": {
+          "$ref": "#/definitions/CustomerOrderDetails"
+        }
+      }
+    },
+    "RestaurantOrderDetailsResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Restaurant order details fetched successfully"
+        },
+        "data": {
+          "$ref": "#/definitions/RestaurantOrderDetails"
+        }
+      }
+    },
+    "UpdatedRestaurantOrderStatusResponse": {
+      "type": "object",
+      "required": ["message", "data"],
+      "properties": {
+        "message": {
+          "type": "string",
+          "example": "Order status updated successfully"
+        },
+        "data": {
+          "$ref": "#/definitions/RestaurantOrderDetails"
+        }
+      }
+    }
+  }
+}

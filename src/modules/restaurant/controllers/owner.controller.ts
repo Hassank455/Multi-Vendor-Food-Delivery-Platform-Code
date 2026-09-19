@@ -1,0 +1,82 @@
+import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
+import asyncHandler from "../../../utils/asyncHandler";
+import { ForbiddenError } from "../../../errors";
+import { OwnerService } from "../services/owner.service";
+import {
+  CreateRestaurantDto,
+  UpdateRestaurantDto,
+  UpdateRestaurantStatusDto,
+} from "../restaurant.dto";
+
+export class OwnerController {
+  constructor(private ownerService: OwnerService) {}
+
+  private getOwnerId(req: Request) {
+    const ownerId = req.user?.id;
+
+    if (!ownerId) {
+      throw new ForbiddenError("Restaurant owner authentication is required");
+    }
+
+    return ownerId;
+  }
+
+  createRestaurant = asyncHandler(async (req: Request, res: Response) => {
+    const ownerId = this.getOwnerId(req);
+    const dto: CreateRestaurantDto = req.body;
+
+    const restaurant = await this.ownerService.createRestaurant(ownerId, dto);
+
+    res.status(StatusCodes.CREATED).json({
+      message: "Restaurant draft created successfully",
+      data: restaurant,
+    });
+  });
+
+  getRestaurant = asyncHandler(async (req: Request, res: Response) => {
+    const ownerId = this.getOwnerId(req);
+    const restaurant = await this.ownerService.findOwnerRestaurant(ownerId);
+
+    res.status(StatusCodes.OK).json({
+      message: "Owner restaurant fetched successfully",
+      data: restaurant,
+    });
+  });
+
+  updateRestaurant = asyncHandler(async (req: Request, res: Response) => {
+    const ownerId = this.getOwnerId(req);
+    const restaurantId = Number(req.params.restaurantId);
+    const dto: UpdateRestaurantDto = req.body;
+
+    const restaurant = await this.ownerService.updateRestaurant(
+      ownerId,
+      restaurantId,
+      dto,
+    );
+
+    res.status(StatusCodes.OK).json({
+      message: "Restaurant updated successfully",
+      data: restaurant,
+    });
+  });
+
+  updateRestaurantStatus = asyncHandler(
+    async (req: Request, res: Response) => {
+      const ownerId = this.getOwnerId(req);
+      const restaurantId = Number(req.params.restaurantId);
+      const dto: UpdateRestaurantStatusDto = req.body;
+
+      const restaurant = await this.ownerService.updateRestaurantStatus(
+        ownerId,
+        restaurantId,
+        dto,
+      );
+
+      res.status(StatusCodes.OK).json({
+        message: "Restaurant status updated successfully",
+        data: restaurant,
+      });
+    },
+  );
+}

@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Query Optimization Report</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+    <style>
+      :root {
+        --bg: #f7f7f5;
+        --card-bg: #ffffff;
+        --soft-bg: #fafaf8;
+        --code-bg: #f6f7f8;
+        --border: #e1e0d9;
+
+        --text-primary: #111111;
+        --text-secondary: #52514e;
+        --text-muted: #898781;
+
+        --before: #e34948;
+        --after: #1baf7a;
+
+        --success: #087a3d;
+        --success-bg: #eaf7ef;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 2rem;
+
+        background: var(--bg);
+        color: var(--text-primary);
+
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 0 0 2rem;
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+
+      .section-title {
+        margin: 2rem 0 1rem;
+        font-size: 19px;
+        font-weight: 700;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+
+        gap: 12px;
+        margin-bottom: 2rem;
+      }
+
+      .metric-card {
+        padding: 1rem;
+
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+
+      .metric-label {
+        margin: 0 0 5px;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .metric-value {
+        margin: 0;
+        font-size: 23px;
+        font-weight: 700;
+      }
+
+      .metric-note {
+        margin: 5px 0 0;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 8px;
+
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+      }
+
+      .chart-wrap {
+        position: relative;
+
+        width: 100%;
+        height: 310px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+
+      .query-card {
+        padding: 1.4rem;
+        margin-bottom: 1.25rem;
+
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      .query-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .query-title {
+        margin: 0;
+
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+        font-size: 17px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+
+        padding: 5px 10px;
+
+        background: var(--success-bg);
+        color: var(--success);
+
+        border-radius: 999px;
+
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .query-description {
+        margin: 0 0 18px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .detail-block {
+        padding: 14px;
+
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+      }
+
+      .detail-label {
+        margin: 0 0 8px;
+
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .time-row {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+      }
+
+      .time-before {
+        color: var(--text-muted);
+        font-size: 15px;
+        text-decoration: line-through;
+      }
+
+      .time-after {
+        color: var(--success);
+        font-size: 21px;
+        font-weight: 700;
+      }
+
+      .arrow {
+        color: var(--text-muted);
+      }
+
+      .execution-info {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .tech-label {
+        margin: 0 0 7px;
+
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 700;
+
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .tech-list {
+        margin: 0 0 18px;
+        padding-left: 20px;
+
+        color: var(--text-secondary);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      code {
+        padding: 2px 5px;
+
+        background: #eef2f7;
+        color: #0f172a;
+
+        border-radius: 4px;
+
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+        font-size: 12px;
+      }
+
+      details {
+        margin-top: 10px;
+
+        background: var(--soft-bg);
+        border: 1px solid var(--border);
+        border-radius: 9px;
+
+        overflow: hidden;
+      }
+
+      summary {
+        cursor: pointer;
+        padding: 12px 14px;
+
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 650;
+
+        list-style: none;
+        user-select: none;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      summary::before {
+        content: "▸";
+        display: inline-block;
+        margin-right: 8px;
+
+        color: var(--text-muted);
+
+        transition: transform 0.15s ease;
+      }
+
+      details[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      details[open] summary {
+        border-bottom: 1px solid var(--border);
+      }
+
+      pre {
+        overflow-x: auto;
+
+        margin: 0;
+        padding: 15px;
+
+        background: var(--code-bg);
+        color: #1f2937;
+
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+        font-size: 12px;
+        line-height: 1.65;
+        white-space: pre;
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        border-radius: 0;
+      }
+
+      .footer-note {
+        margin-top: 2rem;
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 1rem;
+        }
+
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .query-header {
+          flex-direction: column;
+        }
+
+        .chart-wrap {
+          height: 270px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Query Optimization Report</h1>
+
+      <p class="subtitle">
+        PostgreSQL query performance analysis — Cart Module
+      </p>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <p class="metric-label">Queries analyzed</p>
+          <p class="metric-value">1</p>
+          <p class="metric-note">Cart module</p>
+        </div>
+
+        <div class="metric-card">
+          <p class="metric-label">Already optimized</p>
+          <p class="metric-value">1</p>
+          <p class="metric-note">Existing indexed lookup</p>
+        </div>
+
+        <div class="metric-card">
+          <p class="metric-label">Median planning time</p>
+          <p class="metric-value">0.189 ms</p>
+          <p class="metric-note">Based on 6 executions</p>
+        </div>
+
+        <div class="metric-card">
+          <p class="metric-label">Median execution time</p>
+          <p class="metric-value">0.200 ms</p>
+          <p class="metric-note">Based on 6 executions</p>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="swatch" style="background: var(--before)"></span>
+
+          Before optimization
+        </div>
+
+        <div class="legend-item">
+          <span class="swatch" style="background: var(--after)"></span>
+
+          After optimization
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas
+          id="timeChart"
+          role="img"
+          aria-label="Query execution time comparison"
+        >
+          findCartByCustomerId execution time: 0.200 milliseconds.
+        </canvas>
+      </div>
+
+      <h2 class="section-title">Cart Module</h2>
+
+      <article class="query-card">
+        <div class="query-header">
+          <h3 class="query-title">findCartByCustomerId</h3>
+
+          <span class="status-badge"> Already Optimized </span>
+        </div>
+
+        <p class="query-description">
+          Fetch the cart associated with a specific customer. Each customer can
+          own only one cart.
+        </p>
+
+        <div class="detail-grid">
+          <div class="detail-block">
+            <p class="detail-label">Execution Time</p>
+
+            <div class="time-row">
+              <span class="time-before">—</span>
+              <span class="arrow">→</span>
+              <span class="time-after">0.200 ms</span>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <p class="detail-label">Execution Plan</p>
+
+            <p class="execution-info">
+              Scan type:
+              <strong>Index Scan</strong>
+              <br />
+
+              Index:
+              <code>Cart_customerId_key</code>
+              <br />
+
+              Shared buffer hits:
+              <strong>3</strong>
+            </p>
+          </div>
+        </div>
+
+        <p class="tech-label">Optimization Technique</p>
+
+        <ul class="tech-list">
+          <li>
+            Used Prisma <code>findUnique()</code> because
+            <code>customerId</code> is unique.
+          </li>
+
+          <li>
+            Used the existing unique index on
+            <code>customerId</code>, allowing PostgreSQL to perform an index
+            scan instead of scanning all <code>100,000</code> cart records.
+          </li>
+
+          <li>
+            Kept the index on <code>restaurantId</code> to improve other cart
+            queries that filter, count, or join carts by restaurant.
+          </li>
+        </ul>
+
+        <details>
+          <summary>Repository Method</summary>
+
+          <pre><code>async findCartByCustomerId(
+  customerId: number,
+  tx?: PrismaTransaction,
+) {
+  return this.db(tx).cart.findUnique({
+    where: {
+      customerId,
+    },
+  });
+}</code></pre>
+        </details>
+
+        <details>
+          <summary>Generated SQL</summary>
+
+          <pre><code>SELECT
+    "id",
+    "customerId",
+    "restaurantId",
+    "subTotal"
+FROM "Cart"
+WHERE "customerId" = $1
+LIMIT 1;</code></pre>
+        </details>
+
+        <details>
+          <summary>Execution Plan Query</summary>
+
+          <pre><code>EXPLAIN (
+    ANALYZE,
+    BUFFERS,
+    VERBOSE,
+    FORMAT TEXT
+)
+SELECT
+    "id",
+    "customerId",
+    "restaurantId",
+    "subTotal"
+FROM "Cart"
+WHERE "customerId" = 999999999
+LIMIT 1;</code></pre>
+        </details>
+      </article>
+      <article class="query-card">
+        <div class="query-header">
+          <h3 class="query-title">findCartItem</h3>
+
+          <span class="status-badge"> Already Optimized </span>
+        </div>
+
+        <p class="query-description">
+          Fetch a specific cart item using the cart ID and menu item ID.
+        </p>
+
+        <div class="detail-grid">
+          <div class="detail-block">
+            <p class="detail-label">Execution Time</p>
+
+            <div class="time-row">
+              <span class="time-before">—</span>
+              <span class="arrow">→</span>
+              <span class="time-after">0.374 ms</span>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <p class="detail-label">Execution Plan</p>
+
+            <p class="execution-info">
+              Scan type:
+              <strong>Index Scan</strong>
+              <br />
+
+              Index:
+              <code>CartItem_cart_id_menu_item_id_key</code>
+              <br />
+
+              Shared buffer hits:
+              <strong>4</strong>
+            </p>
+          </div>
+        </div>
+
+        <p class="tech-label">Optimization Technique</p>
+
+        <ul class="tech-list">
+          <li>
+            Used Prisma <code>findUnique()</code> to retrieve one cart item
+            using the unique combination of <code>cartId</code> and
+            <code>menuItemId</code>.
+          </li>
+
+          <li>
+            Used the existing composite unique index on
+            <code>(cartId, menuItemId)</code>, allowing PostgreSQL to perform an
+            efficient index scan instead of scanning
+            <code>300,000</code> cart-item records.
+          </li>
+
+          <li>
+            The unique constraint also prevents the same menu item from being
+            added more than once to the same cart.
+          </li>
+        </ul>
+
+        <details>
+          <summary>Repository Method</summary>
+
+          <pre><code>async findCartItem(
+  cartId: number,
+  menuItemId: number,
+  tx?: PrismaTransaction,
+) {
+  return this.db(tx).cartItem.findUnique({
+    where: {
+      cartId_menuItemId: {
+        cartId,
+        menuItemId,
+      },
+    },
+  });
+}</code></pre>
+        </details>
+
+        <details>
+          <summary>Generated SQL</summary>
+
+          <pre><code>SELECT
+    "id",
+    "cart_id",
+    "menu_item_id",
+    "quantity",
+    "price"
+FROM "CartItem"
+WHERE
+    "cart_id" = $1
+    AND "menu_item_id" = $2
+LIMIT 1;</code></pre>
+        </details>
+      </article>
+      <p class="footer-note">
+        Performance measurements were collected using PostgreSQL
+        <code>EXPLAIN ANALYZE</code> on a production-like dataset containing
+        100,000 cart records. Median execution time is used to reduce the effect
+        of unusually fast or slow runs.
+      </p>
+    </div>
+
+    <script>
+      const queryPerformanceData = [
+        {
+          functionName: "findCartByCustomerId",
+          before: null,
+          after: 0.2,
+        },
+        {
+          functionName: "findCartItem",
+          before: null,
+          after: 0.374,
+        },
+      ];
+
+      const labels = queryPerformanceData.map((item) => item.functionName);
+
+      const beforeTimes = queryPerformanceData.map((item) => item.before);
+
+      const afterTimes = queryPerformanceData.map((item) => item.after);
+
+      new Chart(document.getElementById("timeChart"), {
+        type: "bar",
+
+        data: {
+          labels,
+
+          datasets: [
+            {
+              label: "Before",
+              data: beforeTimes,
+              backgroundColor: "#e34948",
+              borderRadius: 4,
+              maxBarThickness: 60,
+            },
+
+            {
+              label: "After",
+              data: afterTimes,
+              backgroundColor: "#1baf7a",
+              borderRadius: 4,
+              maxBarThickness: 60,
+            },
+          ],
+        },
+
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+
+          plugins: {
+            legend: {
+              display: false,
+            },
+
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  if (context.raw === null) {
+                    return context.dataset.label + ": Already optimized";
+                  }
+
+                  return context.dataset.label + ": " + context.raw + " ms";
+                },
+              },
+            },
+          },
+
+          scales: {
+            y: {
+              beginAtZero: true,
+
+              title: {
+                display: true,
+                text: "Execution time (ms)",
+                color: "#898781",
+
+                font: {
+                  size: 12,
+                },
+              },
+
+              ticks: {
+                color: "#898781",
+
+                font: {
+                  size: 11,
+                },
+              },
+
+              grid: {
+                color: "#e1e0d9",
+              },
+            },
+
+            x: {
+              ticks: {
+                color: "#898781",
+
+                font: {
+                  size: 11,
+                },
+              },
+
+              grid: {
+                display: false,
+              },
+            },
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
